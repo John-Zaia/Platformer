@@ -7,6 +7,13 @@ void setupPlayer(sf::RectangleShape& player)
 	player.setFillColor(sf::Color(100, 250, 50));
 }
 
+void setupPlatform(sf::RectangleShape& platform)
+{
+	platform.setSize({ 300.f, 30.f });
+	platform.setFillColor(sf::Color::White);
+	platform.setPosition({ 250.f, 550.f });
+}
+
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed, float jump)
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
@@ -45,6 +52,9 @@ int main()
 	sf::RectangleShape player;
 	setupPlayer(player);
 
+	sf::RectangleShape platform;
+	setupPlatform(platform);
+
 	sf::Clock clock;
 	float speed = 200.f;
 	float jump = 400.f;
@@ -61,11 +71,12 @@ int main()
 				window.close();
 		}
 
-		playerMovement(player, deltaTime, speed, jump);
 		playerGravity(player, deltaTime, velocityY, gravity);
+		playerMovement(player, deltaTime, speed, jump);
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
+		window.draw(platform);
 		window.display();
 
 	}
