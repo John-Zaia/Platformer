@@ -32,9 +32,24 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed, fl
 
 }
 
-void playerGravity(sf::RectangleShape& player, float deltaTime, float& velocityY, float gravity)
+bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 {
-	if (player.getPosition().y < 500)
+	if (player.getGlobalBounds().findIntersection(platform.getGlobalBounds()))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void playerGravity(sf::RectangleShape& player, float deltaTime, float& velocityY, float gravity, bool collided)
+{
+	if (collided)
+	{
+		player.setPosition({ player.getPosition().x, 450.f });
+		velocityY = 0.f;
+	}
+	else if (player.getPosition().y < 500)
 	{
 		velocityY += gravity * deltaTime;
 		player.move({ 0.f, velocityY * deltaTime });
@@ -71,7 +86,8 @@ int main()
 				window.close();
 		}
 
-		playerGravity(player, deltaTime, velocityY, gravity);
+		bool collided = detectCollision(player, platform);
+		playerGravity(player, deltaTime, velocityY, gravity, collided);
 		playerMovement(player, deltaTime, speed, jump);
 
 		window.clear(sf::Color::Black);
