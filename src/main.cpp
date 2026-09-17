@@ -5,6 +5,7 @@ void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(50.f, 100.f));
 	player.setFillColor(sf::Color(100, 250, 50));
+	player.setPosition({ 350.f, 400.f });
 }
 
 void setupPlatform(sf::RectangleShape& platform)
@@ -14,7 +15,7 @@ void setupPlatform(sf::RectangleShape& platform)
 	platform.setPosition({ 250.f, 550.f });
 }
 
-void playerMovement(sf::RectangleShape& player, float deltaTime, float speed, float jump)
+void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
 	{
@@ -25,11 +26,12 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed, fl
 		player.move({ -speed * deltaTime, 0.f });
 	}
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-	{
-		player.move({ 0.f, -jump * deltaTime });
-	}
 
+}
+
+void playerJump(float& velocityY)
+{
+	velocityY = -400.f;
 }
 
 bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
@@ -72,23 +74,39 @@ int main()
 
 	sf::Clock clock;
 	float speed = 200.f;
-	float jump = 400.f;
 	float velocityY = 0.f;
 	float gravity = 980.f;
+	bool isGrounded = true;
 
 	while (window.isOpen())
 	{
 		float deltaTime = clock.restart().asSeconds();
+		bool collided = detectCollision(player, platform);
+
+		if (detectCollision(player, platform) && velocityY >= 0.f)
+		{
+			player.setPosition({ player.getPosition().x, 450.f });
+			velocityY = 0.f;
+			isGrounded = true;
+		}
 
 		while (const std::optional event = window.pollEvent())
 		{
 			if (event->is<sf::Event::Closed>())
 				window.close();
+
+			if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
+			{
+				if (keyPressed->code == sf::Keyboard::Key::Up && isGrounded)
+				{
+					playerJump(velocityY);
+					isGrounded = false;
+				}
+			}
 		}
 
-		bool collided = detectCollision(player, platform);
 		playerGravity(player, deltaTime, velocityY, gravity, collided);
-		playerMovement(player, deltaTime, speed, jump);
+		playerMovement(player, deltaTime, speed);
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
