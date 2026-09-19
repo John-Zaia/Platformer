@@ -29,9 +29,14 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 
 }
 
-void playerJump(float& velocityY)
+void playerJump(float& velocityY, bool& grounded)
 {
-	velocityY = -400.f;
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded)
+	{
+		velocityY = -400.f;
+		grounded = false;
+	}
+
 }
 
 bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
@@ -44,9 +49,9 @@ bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 	return false;
 }
 
-bool playerGravity(sf::RectangleShape& player, sf::RectangleShape& platform, float deltaTime, float& velocityY, float gravity)
+void playerGravity(sf::RectangleShape& player, sf::RectangleShape& platform, float deltaTime, float& velocityY, float gravity, bool& grounded)
 {
-	if (detectCollision(player, platform) && velocityY > 0)
+	if (detectCollision(player, platform) && velocityY >= 0)
 	{
 		player.setPosition({
 			player.getPosition().x,
@@ -54,13 +59,13 @@ bool playerGravity(sf::RectangleShape& player, sf::RectangleShape& platform, flo
 			});
 
 		velocityY = 0.f;
-		return true;
+		grounded = true;
 	}
 	else
 	{
 		velocityY += gravity * deltaTime;
 		player.move({ 0.f, velocityY * deltaTime });
-		return false;
+		grounded = false;
 	}
 }
 
@@ -78,28 +83,22 @@ int main()
 	float speed = 200.f;
 	float velocityY = 0.f;
 	float gravity = 980.f;
+	bool grounded = false;
 
 	while (window.isOpen())
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		bool grounded = playerGravity(player, platform, deltaTime, velocityY, gravity);
-		playerMovement(player, deltaTime, speed);
+		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded);
 
 		while (const std::optional event = window.pollEvent())
 		{
 			if (event->is<sf::Event::Closed>())
 				window.close();
-
-			if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
-			{
-				if (keyPressed->code == sf::Keyboard::Key::Up && grounded)
-				{
-					playerJump(velocityY);
-				}
-			}
 		}
 
+		playerJump(velocityY, grounded);
+		playerMovement(player, deltaTime, speed);
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
