@@ -5,14 +5,14 @@ void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(50.f, 100.f));
 	player.setFillColor(sf::Color(100, 250, 50));
-	player.setPosition({ 350.f, 400.f });
+	player.setPosition({ 350.f, 200.f });
 }
 
 void setupPlatform(sf::RectangleShape& platform)
 {
-	platform.setSize({ 300.f, 30.f });
+	platform.setSize({ 800.f, 30.f });
 	platform.setFillColor(sf::Color::White);
-	platform.setPosition({ 250.f, 550.f });
+	platform.setPosition({ 0.f, 570.f });
 }
 
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
@@ -44,21 +44,23 @@ bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 	return false;
 }
 
-void playerGravity(sf::RectangleShape& player, float deltaTime, float& velocityY, float gravity, bool collided)
+bool playerGravity(sf::RectangleShape& player, sf::RectangleShape& platform, float deltaTime, float& velocityY, float gravity)
 {
-	if (collided)
+	if (detectCollision(player, platform) && velocityY > 0)
 	{
-		player.setPosition({ player.getPosition().x, 450.f });
+		player.setPosition({
+			player.getPosition().x,
+			platform.getPosition().y - player.getSize().y
+			});
+
 		velocityY = 0.f;
-	}
-	else if (player.getPosition().y < 500)
-	{
-		velocityY += gravity * deltaTime;
-		player.move({ 0.f, velocityY * deltaTime });
+		return true;
 	}
 	else
 	{
-		velocityY = 0.f;
+		velocityY += gravity * deltaTime;
+		player.move({ 0.f, velocityY * deltaTime });
+		return false;
 	}
 }
 
@@ -76,19 +78,13 @@ int main()
 	float speed = 200.f;
 	float velocityY = 0.f;
 	float gravity = 980.f;
-	bool isGrounded = true;
 
 	while (window.isOpen())
 	{
 		float deltaTime = clock.restart().asSeconds();
-		bool collided = detectCollision(player, platform);
 
-		if (detectCollision(player, platform) && velocityY >= 0.f)
-		{
-			player.setPosition({ player.getPosition().x, 450.f });
-			velocityY = 0.f;
-			isGrounded = true;
-		}
+		bool grounded = playerGravity(player, platform, deltaTime, velocityY, gravity);
+		playerMovement(player, deltaTime, speed);
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -97,16 +93,13 @@ int main()
 
 			if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
 			{
-				if (keyPressed->code == sf::Keyboard::Key::Up && isGrounded)
+				if (keyPressed->code == sf::Keyboard::Key::Up && grounded)
 				{
 					playerJump(velocityY);
-					isGrounded = false;
 				}
 			}
 		}
 
-		playerGravity(player, deltaTime, velocityY, gravity, collided);
-		playerMovement(player, deltaTime, speed);
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
