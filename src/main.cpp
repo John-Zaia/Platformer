@@ -79,6 +79,16 @@ int main()
 	sf::RectangleShape platform;
 	setupPlatform(platform);
 
+	sf::Texture groundTexture;
+	if (!groundTexture.loadFromFile("ground.jpg"))
+	{
+		return -1;
+	}
+
+	platform.setTexture(&groundTexture);
+	groundTexture.setRepeated(true);
+	platform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
+
 	sf::Clock clock;
 	float speed = 200.f;
 	float velocityY = 0.f;
