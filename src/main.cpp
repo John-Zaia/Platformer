@@ -17,11 +17,11 @@ void setupPlatform(sf::RectangleShape& platform)
 
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) && player.getPosition().x < 750)
 	{
 		player.move({ speed * deltaTime, 0.f });
 	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && player.getPosition().x > 0)
 	{
 		player.move({ -speed * deltaTime, 0.f });
 	}
