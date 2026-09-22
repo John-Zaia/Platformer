@@ -8,11 +8,11 @@ void setupPlayer(sf::RectangleShape& player)
 	player.setPosition({ 350.f, 200.f });
 }
 
-void setupPlatform(sf::RectangleShape& platform)
+void setupPlatform(sf::RectangleShape& platform, float xSize, float ySize, float xPosition, float yPosition)
 {
-	platform.setSize({ 800.f, 30.f });
+	platform.setSize({ xSize, ySize });
 	platform.setFillColor(sf::Color::White);
-	platform.setPosition({ 0.f, 570.f });
+	platform.setPosition({ xPosition, yPosition });
 }
 
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
@@ -25,8 +25,6 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 	{
 		player.move({ -speed * deltaTime, 0.f });
 	}
-
-
 }
 
 void playerJump(float& velocityY, bool& grounded)
@@ -49,23 +47,29 @@ bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 	return false;
 }
 
-void playerGravity(sf::RectangleShape& player, sf::RectangleShape& platform, float deltaTime, float& velocityY, float gravity, bool& grounded)
-{
-	if (detectCollision(player, platform) && velocityY >= 0)
-	{
-		player.setPosition({
-			player.getPosition().x,
-			platform.getPosition().y - player.getSize().y
-			});
+void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
+{	
+	grounded = false;
 
-		velocityY = 0.f;
-		grounded = true;
+	for (int i = 0; i < rectanglePlatforms.size(); i++)
+	{
+		if (detectCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
+		{
+			player.setPosition({
+				player.getPosition().x,
+				rectanglePlatforms[i].getPosition().y - player.getSize().y
+				});
+
+			velocityY = 0.f;
+			grounded = true;
+			break;
+		}
 	}
-	else
+
+	if (!grounded)
 	{
 		velocityY += gravity * deltaTime;
 		player.move({ 0.f, velocityY * deltaTime });
-		grounded = false;
 	}
 }
 
@@ -73,11 +77,18 @@ int main()
 {
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 
+	std::vector<sf::RectangleShape> rectangePlatforms;
+
 	sf::RectangleShape player;
 	setupPlayer(player);
 
-	sf::RectangleShape platform;
-	setupPlatform(platform);
+	sf::RectangleShape groundPlatform;
+	setupPlatform(groundPlatform, 800.f, 30.f, 0.f, 570.f);
+	rectangePlatforms.emplace_back(groundPlatform);
+
+	sf::RectangleShape midPlatform;
+	setupPlatform(midPlatform, 100.f, 30.f, 250.f, 500.f);
+	rectangePlatforms.emplace_back(midPlatform);
 
 	sf::Texture groundTexture;
 	if (!groundTexture.loadFromFile("ground.jpg"))
@@ -85,9 +96,9 @@ int main()
 		return -1;
 	}
 
-	platform.setTexture(&groundTexture);
+	groundPlatform.setTexture(&groundTexture);
 	groundTexture.setRepeated(true);
-	platform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
+	groundPlatform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
 
 	sf::Clock clock;
 	float speed = 200.f;
@@ -99,7 +110,7 @@ int main()
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded);
+		playerGravity(player, rectangePlatforms, deltaTime, velocityY, gravity, grounded);
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -112,9 +123,9 @@ int main()
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
-		window.draw(platform);
+		window.draw(groundPlatform);
+		window.draw(midPlatform);
 		window.display();
 
 	}
-
 }
