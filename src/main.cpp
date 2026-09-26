@@ -5,7 +5,7 @@ void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(50.f, 100.f));
 	player.setFillColor(sf::Color(100, 250, 50));
-	player.setPosition({ 350.f, 200.f });
+	player.setPosition({ 0.f, 570.f });
 }
 
 void setupPlatform(sf::RectangleShape& platform, float xSize, float ySize, float xPosition, float yPosition)
@@ -15,16 +15,39 @@ void setupPlatform(sf::RectangleShape& platform, float xSize, float ySize, float
 	platform.setPosition({ xPosition, yPosition });
 }
 
+void setupTriangle(sf::CircleShape& triangle, float radius, int points, float xPosition, float yPosition)
+{
+	triangle.setRadius(radius);
+	triangle.setPointCount(points);
+	triangle.setPosition({ xPosition, yPosition });
+}
+
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 {
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) && player.getPosition().x < 750)
+	bool switchMovement = false;
+
+	//movement for debugging
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
+	{
+		switchMovement = true;
+	}
+
+	if (switchMovement == false)
 	{
 		player.move({ speed * deltaTime, 0.f });
 	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && player.getPosition().x > 0)
+	else
 	{
-		player.move({ -speed * deltaTime, 0.f });
+		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) && player.getPosition().x < 750)
+		{
+			player.move({ speed * deltaTime, 0.f });
+		}
+		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && player.getPosition().x > 0)
+		{
+			player.move({ -speed * deltaTime, 0.f });
+		}
 	}
+	
 }
 
 void playerJump(float& velocityY, bool& grounded)
@@ -37,7 +60,7 @@ void playerJump(float& velocityY, bool& grounded)
 
 }
 
-bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
+bool detectPlatformCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 {
 	if (player.getGlobalBounds().findIntersection(platform.getGlobalBounds()))
 	{
@@ -47,13 +70,23 @@ bool detectCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 	return false;
 }
 
-void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
+bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
+{
+	if (player.getGlobalBounds().findIntersection(triangle.getGlobalBounds()))
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, std::vector<sf::CircleShape>& triangleObstacles, float deltaTime, float& velocityY, float gravity, bool& grounded)
 {	
 	grounded = false;
 
 	for (int i = 0; i < rectanglePlatforms.size(); i++)
 	{
-		if (detectCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
+		if (detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
 		{
 			player.setPosition({
 				player.getPosition().x,
@@ -63,6 +96,14 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 			velocityY = 0.f;
 			grounded = true;
 			break;
+		}
+	}
+
+	for (auto i : triangleObstacles)
+	{
+		if (detectObjectCollision(player, i))
+		{
+			player.setPosition({ 0.f, 570.f });
 		}
 	}
 
@@ -78,6 +119,7 @@ int main()
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 
 	std::vector<sf::RectangleShape> rectangePlatforms;
+	std::vector<sf::CircleShape> triangleObstacles;
 
 	sf::RectangleShape player;
 	setupPlayer(player);
@@ -86,9 +128,9 @@ int main()
 	setupPlatform(groundPlatform, 800.f, 30.f, 0.f, 570.f);
 	rectangePlatforms.emplace_back(groundPlatform);
 
-	sf::RectangleShape midPlatform;
-	setupPlatform(midPlatform, 100.f, 30.f, 250.f, 500.f);
-	rectangePlatforms.emplace_back(midPlatform);
+	sf::CircleShape triangle;
+	setupTriangle(triangle, 20.f, 3, 400.f, 540.f);
+	triangleObstacles.emplace_back(triangle);
 
 	sf::Texture groundTexture;
 	if (!groundTexture.loadFromFile("ground.jpg"))
@@ -110,7 +152,7 @@ int main()
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		playerGravity(player, rectangePlatforms, deltaTime, velocityY, gravity, grounded);
+		playerGravity(player, rectangePlatforms, triangleObstacles, deltaTime, velocityY, gravity, grounded);
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -124,7 +166,7 @@ int main()
 		window.clear(sf::Color::Black);
 		window.draw(player);
 		window.draw(groundPlatform);
-		window.draw(midPlatform);
+		window.draw(triangle);
 		window.display();
 
 	}
