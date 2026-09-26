@@ -80,7 +80,23 @@ bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
 	return false;
 }
 
-void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, std::vector<sf::CircleShape>& triangleObstacles, float deltaTime, float& velocityY, float gravity, bool& grounded)
+void playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
+{
+	for (auto i : triangleObstacles)
+	{
+		if (detectObjectCollision(player, i))
+		{
+			player.setPosition({ 0.f, 570.f });
+		}
+	}
+
+	if (player.getPosition().y > 1000)
+	{
+		player.setPosition({ 0.f, 570.f });
+	}
+}
+
+void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
 {	
 	grounded = false;
 
@@ -99,14 +115,6 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 		}
 	}
 
-	for (auto i : triangleObstacles)
-	{
-		if (detectObjectCollision(player, i))
-		{
-			player.setPosition({ 0.f, 570.f });
-		}
-	}
-
 	if (!grounded)
 	{
 		velocityY += gravity * deltaTime;
@@ -117,12 +125,14 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
+	
+	sf::RectangleShape player;
+	setupPlayer(player);
+
+	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
 	std::vector<sf::RectangleShape> rectangePlatforms;
 	std::vector<sf::CircleShape> triangleObstacles;
-
-	sf::RectangleShape player;
-	setupPlayer(player);
 
 	sf::RectangleShape groundPlatform;
 	setupPlatform(groundPlatform, 800.f, 30.f, 0.f, 570.f);
@@ -152,7 +162,8 @@ int main()
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		playerGravity(player, rectangePlatforms, triangleObstacles, deltaTime, velocityY, gravity, grounded);
+		playerGravity(player, rectangePlatforms, deltaTime, velocityY, gravity, grounded);
+		playerDeath(player, triangleObstacles);
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -162,6 +173,9 @@ int main()
 
 		playerJump(velocityY, grounded);
 		playerMovement(player, deltaTime, speed);
+
+		camera.setCenter(player.getPosition());
+		window.setView(camera);
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
