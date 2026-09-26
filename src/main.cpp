@@ -8,18 +8,32 @@ void setupPlayer(sf::RectangleShape& player)
 	player.setPosition({ 0.f, 570.f });
 }
 
-void setupPlatform(sf::RectangleShape& platform, float xSize, float ySize, float xPosition, float yPosition)
+sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
 {
+	sf::RectangleShape platform;
 	platform.setSize({ xSize, ySize });
 	platform.setFillColor(sf::Color::White);
 	platform.setPosition({ xPosition, yPosition });
+
+	platform.setTexture(&groundTexture);
+	groundTexture.setRepeated(true);
+	platform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
+
+	return platform;
 }
 
-void setupTriangle(sf::CircleShape& triangle, float radius, int points, float xPosition, float yPosition)
+sf::CircleShape setupTriangle(float radius, int points, float xPosition, float yPosition, sf::Texture& triangleTexture)
 {
+	sf::CircleShape triangle;
 	triangle.setRadius(radius);
 	triangle.setPointCount(points);
 	triangle.setPosition({ xPosition, yPosition });
+
+	triangle.setTexture(&triangleTexture);
+	triangleTexture.setRepeated(true);
+	triangle.setTexture(&triangleTexture);
+
+	return triangle;
 }
 
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
@@ -126,6 +140,12 @@ int main()
 {
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 	
+	sf::Texture groundTexture;
+	if (!groundTexture.loadFromFile("ground.jpg")) return 1;
+
+	sf::Texture obstacleTexture;
+	if (!obstacleTexture.loadFromFile("obstacle.jpg")) return 1;
+
 	sf::RectangleShape player;
 	setupPlayer(player);
 
@@ -134,23 +154,8 @@ int main()
 	std::vector<sf::RectangleShape> rectangePlatforms;
 	std::vector<sf::CircleShape> triangleObstacles;
 
-	sf::RectangleShape groundPlatform;
-	setupPlatform(groundPlatform, 800.f, 30.f, 0.f, 570.f);
-	rectangePlatforms.emplace_back(groundPlatform);
-
-	sf::CircleShape triangle;
-	setupTriangle(triangle, 20.f, 3, 400.f, 540.f);
-	triangleObstacles.emplace_back(triangle);
-
-	sf::Texture groundTexture;
-	if (!groundTexture.loadFromFile("ground.jpg"))
-	{
-		return -1;
-	}
-
-	groundPlatform.setTexture(&groundTexture);
-	groundTexture.setRepeated(true);
-	groundPlatform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
+	rectangePlatforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
 
 	sf::Clock clock;
 	float speed = 200.f;
@@ -179,9 +184,17 @@ int main()
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
-		window.draw(groundPlatform);
-		window.draw(triangle);
-		window.display();
 
+		for (auto& i : rectangePlatforms)
+		{
+			window.draw(i);
+		}
+
+		for (auto& i : triangleObstacles)
+		{
+			window.draw(i);
+		}
+
+		window.display();
 	}
 }
