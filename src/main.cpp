@@ -3,7 +3,7 @@
 
 void setupPlayer(sf::RectangleShape& player)
 {
-	player.setSize(sf::Vector2f(50.f, 100.f));
+	player.setSize(sf::Vector2f(50.f, 50.f));
 	player.setFillColor(sf::Color(100, 250, 50));
 	player.setPosition({ 0.f, 570.f });
 }
@@ -17,7 +17,7 @@ sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, flo
 
 	platform.setTexture(&groundTexture);
 	groundTexture.setRepeated(true);
-	platform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(800), static_cast<int>(30) }));
+	platform.setTextureRect(sf::IntRect({ 0, 0 }, { static_cast<int>(xSize), static_cast<int>(ySize) }));
 
 	return platform;
 }
@@ -116,7 +116,12 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 
 	for (int i = 0; i < rectanglePlatforms.size(); i++)
 	{
-		if (detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
+
+		if (player.getPosition().y + player.getSize().y - 5 > rectanglePlatforms[i].getPosition().y && player.getPosition().x < rectanglePlatforms[i].getPosition().x && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY > 0)
+		{
+			player.setPosition({ rectanglePlatforms[i].getPosition().x - player.getSize().x, player.getPosition().y});
+		}
+		else if (detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
 		{
 			player.setPosition({
 				player.getPosition().x,
@@ -151,14 +156,20 @@ int main()
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
-	std::vector<sf::RectangleShape> rectangePlatforms;
+	std::vector<sf::RectangleShape> rectanglePlatforms;
 	std::vector<sf::CircleShape> triangleObstacles;
 
-	rectangePlatforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	rectanglePlatforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1000.f, 500.f, groundTexture));
+	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1200.f, 430.f, groundTexture));
+	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1400.f, 360.f, groundTexture));
+	rectanglePlatforms.push_back(setupPlatform(400.f, 30.f, 1600.f, 290.f, groundTexture));
+
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
 
 	sf::Clock clock;
-	float speed = 200.f;
+	float speed = 400.f;
 	float velocityY = 0.f;
 	float gravity = 980.f;
 	bool grounded = false;
@@ -167,7 +178,7 @@ int main()
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		playerGravity(player, rectangePlatforms, deltaTime, velocityY, gravity, grounded);
+		playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
 		playerDeath(player, triangleObstacles);
 
 		while (const std::optional event = window.pollEvent())
@@ -185,7 +196,7 @@ int main()
 		window.clear(sf::Color::Black);
 		window.draw(player);
 
-		for (auto& i : rectangePlatforms)
+		for (auto& i : rectanglePlatforms)
 		{
 			window.draw(i);
 		}
