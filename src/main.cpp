@@ -101,7 +101,7 @@ bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
 	return false;
 }
 
-void playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
+bool playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("death.mp3");
@@ -112,16 +112,19 @@ void playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& trian
 		if (detectObjectCollision(player, i))
 		{
 			if (soundLoaded) deathSound.play();
-			player.setPosition({ 0.f, 570.f });
+			return true;
 		}
 	}
 
 	if (player.getPosition().y > 1000)
 	{
 		if (soundLoaded) deathSound.play();
-		player.setPosition({ 0.f, 570.f });
+		return true;
 	}
+
+	return false;
 }
+
 
 void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
 {	
@@ -182,17 +185,41 @@ int main()
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
 
 	sf::Clock clock;
+	sf::Clock deathClock;
 	float speed = 400.f;
 	float velocityY = 0.f;
 	float gravity = 980.f;
 	bool grounded = false;
+	bool dead = false;
 
 	while (window.isOpen())
 	{
 		float deltaTime = clock.restart().asSeconds();
 
-		playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
-		playerDeath(player, triangleObstacles);
+		if (!dead)
+		{
+			playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
+
+			if (playerDeath(player, triangleObstacles))
+			{
+				dead = true;
+				deathClock.restart();
+			}
+			else
+			{
+				playerJump(velocityY, grounded);
+				playerMovement(player, deltaTime, speed);
+			}
+		}
+		else
+		{
+			if (deathClock.getElapsedTime().asSeconds() >= 1.f)
+			{
+				player.setPosition({ 0.f, 520.f });
+				velocityY = 0.f;
+				dead = false;
+			}
+		}
 
 		while (const std::optional event = window.pollEvent())
 		{
@@ -200,8 +227,6 @@ int main()
 				window.close();
 		}
 
-		playerJump(velocityY, grounded);
-		playerMovement(player, deltaTime, speed);
 
 		camera.setCenter(player.getPosition());
 		window.setView(camera);
