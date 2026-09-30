@@ -1,11 +1,13 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 
 void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(50.f, 50.f));
 	player.setFillColor(sf::Color(100, 250, 50));
 	player.setPosition({ 0.f, 570.f });
+	
 }
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
@@ -66,8 +68,13 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 
 void playerJump(float& velocityY, bool& grounded)
 {
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded =buffer.loadFromFile("jump.mp3");
+	static sf::Sound jumpSound(buffer);
+
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded)
 	{
+		if (soundLoaded) jumpSound.play();
 		velocityY = -400.f;
 		grounded = false;
 	}
@@ -117,7 +124,7 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 	for (int i = 0; i < rectanglePlatforms.size(); i++)
 	{
 
-		if (player.getPosition().y + player.getSize().y - 5 > rectanglePlatforms[i].getPosition().y && player.getPosition().x < rectanglePlatforms[i].getPosition().x && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY > 0)
+		if (player.getPosition().y + player.getSize().y - 5 > rectanglePlatforms[i].getPosition().y && player.getPosition().x < rectanglePlatforms[i].getPosition().x && detectPlatformCollision(player, rectanglePlatforms[i]))
 		{
 			player.setPosition({ rectanglePlatforms[i].getPosition().x - player.getSize().x, player.getPosition().y});
 		}
