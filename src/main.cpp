@@ -1,6 +1,7 @@
 #include <SFML/Window.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <string>
 
 void setupPlayer(sf::RectangleShape& player)
 {
@@ -125,6 +126,15 @@ bool playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& trian
 	return false;
 }
 
+sf::Text deathCounter(int deathCounter, sf::Font& font)
+{
+	sf::Text totalDeaths(font);
+	totalDeaths.setString("Deaths: " + std::to_string(deathCounter));
+	totalDeaths.setCharacterSize(30);
+	totalDeaths.setPosition(sf::Vector2(0.f, 400.f));
+
+	return totalDeaths;
+}
 
 void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
 {	
@@ -184,6 +194,9 @@ int main()
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
 
+	sf::Font font;
+	if (!font.openFromFile("text.ttf")) { return 1; }
+
 	sf::Clock clock;
 	sf::Clock deathClock;
 	float speed = 400.f;
@@ -191,6 +204,8 @@ int main()
 	float gravity = 980.f;
 	bool grounded = false;
 	bool dead = false;
+	int totalDeath = 0;
+	sf::Text deaths = deathCounter(totalDeath, font);
 
 	while (window.isOpen())
 	{
@@ -202,6 +217,8 @@ int main()
 
 			if (playerDeath(player, triangleObstacles))
 			{
+				totalDeath++;
+				deaths.setString("Deaths: " + std::to_string(totalDeath));
 				dead = true;
 				deathClock.restart();
 			}
@@ -233,6 +250,8 @@ int main()
 
 		window.clear(sf::Color::Black);
 		window.draw(player);
+
+		window.draw(deaths);
 
 		for (auto& i : rectanglePlatforms)
 		{
