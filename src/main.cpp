@@ -69,7 +69,7 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 void playerJump(float& velocityY, bool& grounded)
 {
 	static sf::SoundBuffer buffer;
-	static bool soundLoaded =buffer.loadFromFile("jump.mp3");
+	static bool soundLoaded = buffer.loadFromFile("jump.mp3");
 	static sf::Sound jumpSound(buffer);
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded)
@@ -103,16 +103,22 @@ bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
 
 void playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
 {
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded = buffer.loadFromFile("death.mp3");
+	static sf::Sound deathSound(buffer);
+
 	for (auto i : triangleObstacles)
 	{
 		if (detectObjectCollision(player, i))
 		{
+			if (soundLoaded) deathSound.play();
 			player.setPosition({ 0.f, 570.f });
 		}
 	}
 
 	if (player.getPosition().y > 1000)
 	{
+		if (soundLoaded) deathSound.play();
 		player.setPosition({ 0.f, 570.f });
 	}
 }
