@@ -7,7 +7,7 @@ void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(50.f, 50.f));
 	player.setFillColor(sf::Color(100, 250, 50));
-	player.setPosition({ 0.f, 570.f });
+	player.setPosition({ 25.f, 570.f });
 	
 }
 
@@ -72,6 +72,7 @@ void playerJump(float& velocityY, bool& grounded)
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("jump.mp3");
 	static sf::Sound jumpSound(buffer);
+
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded)
 	{
@@ -154,6 +155,7 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 				rectanglePlatforms[i].getPosition().y - player.getSize().y
 				});
 
+
 			velocityY = 0.f;
 			grounded = true;
 			break;
@@ -167,8 +169,25 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 	}
 }
 
+void winScreen(sf::RenderWindow& window, sf::Text winText)
+{
+	window.clear(sf::Color::Black);
+	window.setView(window.getDefaultView());
+	winText.setString("You win");
+	winText.setCharacterSize(30);
+	winText.setPosition(sf::Vector2(350.f, 250.f));
+	window.draw(winText);
+}
+
+enum class GameState
+{
+	Playing,
+	LevelComplete
+};
+
 int main()
 {
+	GameState gameState = GameState::Playing;
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 	
 	sf::Texture groundTexture;
@@ -206,61 +225,74 @@ int main()
 	bool dead = false;
 	int totalDeath = 0;
 	sf::Text deaths = deathCounter(totalDeath, font);
+	sf::Text winText(font);
 
 	while (window.isOpen())
 	{
-		float deltaTime = clock.restart().asSeconds();
-
-		if (!dead)
-		{
-			playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
-
-			if (playerDeath(player, triangleObstacles))
-			{
-				totalDeath++;
-				deaths.setString("Deaths: " + std::to_string(totalDeath));
-				dead = true;
-				deathClock.restart();
-			}
-			else
-			{
-				playerJump(velocityY, grounded);
-				playerMovement(player, deltaTime, speed);
-			}
-		}
-		else
-		{
-			if (deathClock.getElapsedTime().asSeconds() >= 1.f)
-			{
-				player.setPosition({ 0.f, 520.f });
-				velocityY = 0.f;
-				dead = false;
-			}
-		}
-
 		while (const std::optional event = window.pollEvent())
 		{
 			if (event->is<sf::Event::Closed>())
 				window.close();
 		}
 
-
-		camera.setCenter(player.getPosition());
-		window.setView(camera);
-
-		window.clear(sf::Color::Black);
-		window.draw(player);
-
-		window.draw(deaths);
-
-		for (auto& i : rectanglePlatforms)
+		if (player.getPosition().x >= 2000)
 		{
-			window.draw(i);
+			gameState = GameState::LevelComplete;
 		}
 
-		for (auto& i : triangleObstacles)
+		if (gameState == GameState::Playing)
 		{
-			window.draw(i);
+			float deltaTime = clock.restart().asSeconds();
+
+			if (!dead)
+			{
+				playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
+
+				if (playerDeath(player, triangleObstacles))
+				{
+					totalDeath++;
+					deaths.setString("Deaths: " + std::to_string(totalDeath));
+					dead = true;
+					deathClock.restart();
+				}
+				else
+				{
+					playerJump(velocityY, grounded);
+					playerMovement(player, deltaTime, speed);
+				}
+			}
+			else
+			{
+				if (deathClock.getElapsedTime().asSeconds() >= 1.f)
+				{
+					player.setPosition({ 0.f, 520.f });
+					velocityY = 0.f;
+					dead = false;
+				}
+			}
+
+
+			camera.setCenter(player.getPosition());
+			window.setView(camera);
+
+			window.clear(sf::Color::Black);
+			window.draw(player);
+
+			window.draw(deaths);
+
+			for (auto& i : rectanglePlatforms)
+			{
+				window.draw(i);
+			}
+
+			for (auto& i : triangleObstacles)
+			{
+				window.draw(i);
+			}
+		}
+		else if (gameState == GameState::LevelComplete)
+		{
+			winScreen(window, winText);
 		}
 
 		window.display();
