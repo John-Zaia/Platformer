@@ -169,21 +169,63 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 	}
 }
 
-void winScreen(sf::RenderWindow& window, sf::Text winText)
-{
-	window.clear(sf::Color::Black);
-	window.setView(window.getDefaultView());
-	winText.setString("You win");
-	winText.setCharacterSize(30);
-	winText.setPosition(sf::Vector2(350.f, 250.f));
-	window.draw(winText);
-}
-
 enum class GameState
 {
 	Playing,
 	LevelComplete
 };
+
+GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock)
+{
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded = buffer.loadFromFile("click.mp3");
+	static sf::Sound clickSound(buffer);
+
+	sf::RectangleShape shape;
+	sf::Text text(font);
+
+	window.clear(sf::Color::Black);
+	window.setView(window.getDefaultView());
+
+	winText.setString("You win");
+	winText.setCharacterSize(30);
+	winText.setPosition(sf::Vector2(350.f, 250.f));
+
+	shape.setPosition(sf::Vector2(350.f, 300.f));
+	shape.setSize(sf::Vector2f(100, 50));
+	shape.setFillColor(sf::Color::Red);
+
+	text.setString("Replay");	
+	text.setCharacterSize(15);
+	text.setPosition(sf::Vector2(377.5f, 315.f));
+
+	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+	
+	if ((mousePos.x >= 350.f && mousePos.x <= 450.f)
+		&& (mousePos.y >= 300.f && mousePos.y <= 350.f))
+	{	
+		shape.setFillColor(sf::Color::Blue);
+	}
+
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) &&
+		(mousePos.x >= 350.f && mousePos.x <= 450.f)
+		&& (mousePos.y >= 300.f && mousePos.y <= 350.f))
+	{
+		if (soundLoaded) clickSound.play();
+		player.setPosition({ 25.f, 570.f });
+		velcoityY = 0.f;
+		camera.setCenter(player.getPosition());
+		clock.restart();
+		return GameState::Playing;
+	}
+
+	window.draw(shape);
+	window.draw(text);
+	window.draw(winText);
+
+	return GameState::LevelComplete;
+}
+
 
 int main()
 {
@@ -292,7 +334,7 @@ int main()
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
-			winScreen(window, winText);
+			gameState = winScreen(window, winText, font, player, camera, velocityY, clock);
 		}
 
 		window.display();
