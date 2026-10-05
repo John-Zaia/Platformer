@@ -171,9 +171,10 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 
 enum class GameState
 {
-	mainMenu,
+	MainMenu,
 	Playing,
-	LevelComplete
+	LevelComplete,
+	Quit
 };
 
 class Button
@@ -206,6 +207,19 @@ void buttonHoverHighlight(Button& button, sf::RenderWindow& window)
 	}
 }
 
+bool buttonClick(Button& button, sf::RenderWindow& window)
+{
+	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)
+		&& (mousePos.x >= button.shape.getPosition().x && mousePos.x <= button.shape.getPosition().x + button.shape.getSize().x)
+		&& (mousePos.y >= button.shape.getPosition().y && mousePos.y <= button.shape.getPosition().y + button.shape.getSize().y))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock)
 {
 	static sf::SoundBuffer buffer;
@@ -214,15 +228,17 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 
 	sf::Text text(font);
 
-	Button playButton({ 200.f, 300.f }, { 150.f, 50.f }, sf::Color::Red, font, "Play");
+	Button playButton({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Play");
 	buttonHoverHighlight(playButton, window);
 	window.draw(playButton.shape);
 	window.draw(playButton.text);
 
-	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)
-		&& (mousePos.x >= playButton.shape.getPosition().x && mousePos.x <= playButton.shape.getPosition().x + playButton.shape.getSize().x)
-		&& (mousePos.y >= playButton.shape.getPosition().y && mousePos.y <= playButton.shape.getPosition().y + playButton.shape.getSize().y))
+	Button quitButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
+	buttonHoverHighlight(quitButton, window);
+	window.draw(quitButton.shape);
+	window.draw(quitButton.text);
+
+	if(buttonClick(playButton, window))
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
@@ -231,8 +247,20 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 		clock.restart();
 		return GameState::Playing;
 	}
+	else if (buttonClick(quitButton, window))
+	{
+		if (soundLoaded)
+		{
+			clickSound.play();
+			while (clickSound.getStatus() == sf::Sound::Status::Playing)
+			{
+				sf::sleep(sf::milliseconds(1));
+			}
+		}
+		return GameState::Quit;
+	}
 
-	return GameState::mainMenu;
+	return GameState::MainMenu;
 }
 
 GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock)
@@ -289,7 +317,7 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 
 int main()
 {
-	GameState gameState = GameState::mainMenu;
+	GameState gameState = GameState::MainMenu;
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 	
 	sf::Texture groundTexture;
@@ -342,7 +370,7 @@ int main()
 			gameState = GameState::LevelComplete;
 		}
 
-		if (gameState == GameState::mainMenu)
+		if (gameState == GameState::MainMenu)
 		{
 			gameState = mainMenu(window, font, player, camera, velocityY, clock);
 		}
@@ -399,6 +427,10 @@ int main()
 		else if (gameState == GameState::LevelComplete)
 		{
 			gameState = winScreen(window, winText, font, player, camera, velocityY, clock);
+		}
+		else if (gameState == GameState::Quit)
+		{
+			return 0;
 		}
 
 		window.display();
