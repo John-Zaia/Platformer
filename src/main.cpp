@@ -226,8 +226,6 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
 	static sf::Sound clickSound(buffer);
 
-	sf::Text text(font);
-
 	Button playButton({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Play");
 	buttonHoverHighlight(playButton, window);
 	window.draw(playButton.shape);
@@ -269,7 +267,6 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
 	static sf::Sound clickSound(buffer);
 
-	sf::RectangleShape shape;
 	sf::Text text(font);
 
 	window.clear(sf::Color::Black);
@@ -279,25 +276,17 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	winText.setCharacterSize(30);
 	winText.setPosition(sf::Vector2(350.f, 250.f));
 
-	shape.setPosition(sf::Vector2(350.f, 300.f));
-	shape.setSize(sf::Vector2f(100, 50));
-	shape.setFillColor(sf::Color::Red);
+	Button replayButton({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Replay");
+	buttonHoverHighlight(replayButton, window);
+	window.draw(replayButton.shape);
+	window.draw(replayButton.text);
 
-	text.setString("Replay");	
-	text.setCharacterSize(15);
-	text.setPosition(sf::Vector2(377.5f, 315.f));
+	Button quitButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
+	buttonHoverHighlight(quitButton, window);
+	window.draw(quitButton.shape);
+	window.draw(quitButton.text);
 
-	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-	
-	if ((mousePos.x >= 350.f && mousePos.x <= 450.f)
-		&& (mousePos.y >= 300.f && mousePos.y <= 350.f))
-	{	
-		shape.setFillColor(sf::Color::Blue);
-	}
-
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left) &&
-		(mousePos.x >= 350.f && mousePos.x <= 450.f)
-		&& (mousePos.y >= 300.f && mousePos.y <= 350.f))
+	if (buttonClick(replayButton, window))
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
@@ -306,10 +295,19 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 		clock.restart();
 		return GameState::Playing;
 	}
-
-	window.draw(shape);
-	window.draw(text);
-	window.draw(winText);
+	else if (buttonClick(quitButton, window))
+	{
+		if (soundLoaded)
+		{
+			clickSound.play();
+			while (clickSound.getStatus() == sf::Sound::Status::Playing)
+			{
+				sf::sleep(sf::milliseconds(1));
+			}
+		}
+		player.setPosition({ 25.f, 570.f });
+		return GameState::Quit;
+	}
 
 	return GameState::LevelComplete;
 }
