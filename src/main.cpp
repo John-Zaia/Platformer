@@ -172,7 +172,9 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 enum class GameState
 {
 	MainMenu,
-	Playing,
+	LevelSelection,
+	Level1,
+	Level2,
 	LevelComplete,
 	Quit
 };
@@ -207,10 +209,10 @@ void buttonHoverHighlight(Button& button, sf::RenderWindow& window)
 	}
 }
 
-bool buttonClick(Button& button, sf::RenderWindow& window)
+bool buttonClick(Button& button, sf::RenderWindow& window, bool mouseClicked)
 {
 	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-	if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)
+	if (mouseClicked
 		&& (mousePos.x >= button.shape.getPosition().x && mousePos.x <= button.shape.getPosition().x + button.shape.getSize().x)
 		&& (mousePos.y >= button.shape.getPosition().y && mousePos.y <= button.shape.getPosition().y + button.shape.getSize().y))
 	{
@@ -220,7 +222,7 @@ bool buttonClick(Button& button, sf::RenderWindow& window)
 	return false;
 }
 
-GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock)
+GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -236,16 +238,16 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	window.draw(quitButton.shape);
 	window.draw(quitButton.text);
 
-	if(buttonClick(playButton, window))
+	if(buttonClick(playButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
 		velocityY = 0.f;
 		camera.setCenter(player.getPosition());
 		clock.restart();
-		return GameState::Playing;
+		return GameState::LevelSelection;
 	}
-	else if (buttonClick(quitButton, window))
+	else if (buttonClick(quitButton, window, mouseClicked))
 	{
 		if (soundLoaded)
 		{
@@ -261,7 +263,45 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	return GameState::MainMenu;
 }
 
-GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock)
+GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked)
+{
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded = buffer.loadFromFile("click.mp3");
+	static sf::Sound clickSound(buffer);
+
+	Button level1Button({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Level 1");
+	buttonHoverHighlight(level1Button, window);
+	window.draw(level1Button.shape);
+	window.draw(level1Button.text);
+
+	Button level2Button({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Level 2");
+	buttonHoverHighlight(level2Button, window);
+	window.draw(level2Button.shape);
+	window.draw(level2Button.text);
+
+	if (buttonClick(level1Button, window, mouseClicked))
+	{
+		if (soundLoaded) clickSound.play();
+		player.setPosition({ 25.f, 570.f });
+		velocityY = 0.f;
+		camera.setCenter(player.getPosition());
+		clock.restart();
+		return GameState::Level1;
+	}
+	else if(buttonClick(level2Button, window, mouseClicked))
+	{
+		if (soundLoaded) clickSound.play();
+		player.setPosition({ 25.f, 570.f });
+		velocityY = 0.f;
+		camera.setCenter(player.getPosition());
+		clock.restart();
+		return GameState::Level2;
+	}
+
+	return GameState::LevelSelection;
+}
+
+GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -286,16 +326,16 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	window.draw(quitButton.shape);
 	window.draw(quitButton.text);
 
-	if (buttonClick(replayButton, window))
+	if (buttonClick(replayButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
 		velcoityY = 0.f;
 		camera.setCenter(player.getPosition());
 		clock.restart();
-		return GameState::Playing;
+		return GameState::Level1;
 	}
-	else if (buttonClick(quitButton, window))
+	else if (buttonClick(quitButton, window, mouseClicked))
 	{
 		if (soundLoaded)
 		{
@@ -354,27 +394,45 @@ int main()
 	int totalDeath = 0;
 	sf::Text deaths = deathCounter(totalDeath, font);
 	sf::Text winText(font);
+	bool mouseClicked = false;
 
 	while (window.isOpen())
 	{
+		mouseClicked = false;
+
 		while (const std::optional event = window.pollEvent())
 		{
 			if (event->is<sf::Event::Closed>())
 				window.close();
+
+			if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
+			{
+				if (mouseButton->button == sf::Mouse::Button::Left)
+				{
+					mouseClicked = true;
+				}
+			}
 		}
 
-		if (player.getPosition().x >= 2000)
-		{
-			gameState = GameState::LevelComplete;
-		}
 
 		if (gameState == GameState::MainMenu)
 		{
-			gameState = mainMenu(window, font, player, camera, velocityY, clock);
+			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked);
 		}
-		else if (gameState == GameState::Playing)
+		else if (gameState == GameState::LevelSelection)
+		{
+			window.clear(sf::Color::Black);
+			window.setView(window.getDefaultView());
+			gameState = levelSelection(window, font, player, camera, velocityY, clock, mouseClicked);
+		}
+		else if (gameState == GameState::Level1)
 		{
 			float deltaTime = clock.restart().asSeconds();
+
+			if (player.getPosition().x >= 2000)
+			{
+				gameState = GameState::LevelComplete;
+			}
 
 			if (!dead)
 			{
@@ -424,7 +482,7 @@ int main()
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
-			gameState = winScreen(window, winText, font, player, camera, velocityY, clock);
+			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked);
 		}
 		else if (gameState == GameState::Quit)
 		{
