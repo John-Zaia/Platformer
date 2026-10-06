@@ -362,6 +362,47 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	return GameState::LevelComplete;
 }
 
+void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::RectangleShape>& platform,
+	float& deltaTime, float& velocityY, float& gravity, bool& grounded, std::vector<sf::CircleShape> obstacles,
+	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window)
+{
+	if (!dead)
+	{
+		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded);
+
+		if (playerDeath(player, obstacles))
+		{
+			totalDeath++;
+			deaths.setString("Deaths: " + std::to_string(totalDeath));
+			dead = true;
+			deathClock.restart();
+		}
+		else
+		{
+			playerJump(velocityY, grounded);
+			playerMovement(player, deltaTime, speed);
+		}
+	}
+	else
+	{
+		if (deathClock.getElapsedTime().asSeconds() >= 1.f)
+		{
+			player.setPosition({ 0.f, 520.f });
+			velocityY = 0.f;
+			dead = false;
+		}
+	}
+
+
+	camera.setCenter(player.getPosition());
+	window.setView(camera);
+
+	window.clear(sf::Color::Black);
+	window.draw(player);
+
+	window.draw(deaths);
+}
+
 std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
 {
 	std::vector<sf::RectangleShape> platforms;
@@ -385,6 +426,24 @@ std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
 	return triangleObstacles;
 }
 
+std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
+{
+	std::vector<sf::RectangleShape> platforms;
+
+	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+
+	return platforms;
+}
+
+std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
+{
+	std::vector<sf::CircleShape> triangleObstacles;
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
+
+	return triangleObstacles;
+}
+
 int main()
 {
 	GameState gameState = GameState::MainMenu;
@@ -403,6 +462,9 @@ int main()
 
 	std::vector<sf::RectangleShape> level1Platform = level1Platforms(groundTexture);
 	std::vector<sf::CircleShape> level1Triangle = level1Triangles(obstacleTexture);
+
+	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
+	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
 
 	sf::Font font;
 	if (!font.openFromFile("text.ttf")) { return 1; }
@@ -459,41 +521,8 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
-			if (!dead)
-			{
-				playerGravity(player, level1Platform, deltaTime, velocityY, gravity, grounded);
-
-				if (playerDeath(player, level1Triangle))
-				{
-					totalDeath++;
-					deaths.setString("Deaths: " + std::to_string(totalDeath));
-					dead = true;
-					deathClock.restart();
-				}
-				else
-				{
-					playerJump(velocityY, grounded);
-					playerMovement(player, deltaTime, speed);
-				}
-			}
-			else
-			{
-				if (deathClock.getElapsedTime().asSeconds() >= 1.f)
-				{
-					player.setPosition({ 0.f, 520.f });
-					velocityY = 0.f;
-					dead = false;
-				}
-			}
-
-
-			camera.setCenter(player.getPosition());
-			window.setView(camera);
-
-			window.clear(sf::Color::Black);
-			window.draw(player);
-
-			window.draw(deaths);
+			playerState(dead, player, level1Platform, deltaTime, velocityY, gravity, grounded,
+				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window);
 
 			for (auto& i : level1Platform)
 			{
@@ -501,6 +530,28 @@ int main()
 			}
 
 			for (auto& i : level1Triangle)
+			{
+				window.draw(i);
+			}
+		}
+		else if (gameState == GameState::Level2)
+		{
+			float deltaTime = clock.restart().asSeconds();
+
+			if (player.getPosition().x >= 700)
+			{
+				gameState = GameState::LevelComplete;
+			}
+
+			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
+				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window);
+
+			for (auto& i : level2Platform)
+			{
+				window.draw(i);
+			}
+
+			for (auto& i : level2Triangle)
 			{
 				window.draw(i);
 			}
