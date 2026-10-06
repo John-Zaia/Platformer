@@ -321,7 +321,12 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	window.draw(replayButton.shape);
 	window.draw(replayButton.text);
 
-	Button quitButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
+	Button mainMenuButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Main Menu");
+	buttonHoverHighlight(mainMenuButton, window);
+	window.draw(mainMenuButton.shape);
+	window.draw(mainMenuButton.text);
+
+	Button quitButton({ 350.f, 350.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
 	buttonHoverHighlight(quitButton, window);
 	window.draw(quitButton.shape);
 	window.draw(quitButton.text);
@@ -334,6 +339,11 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 		camera.setCenter(player.getPosition());
 		clock.restart();
 		return GameState::Level1;
+	}
+	else if (buttonClick(mainMenuButton, window, mouseClicked))
+	{
+		if (soundLoaded) clickSound.play();
+		return GameState::MainMenu;
 	}
 	else if (buttonClick(quitButton, window, mouseClicked))
 	{
@@ -352,6 +362,28 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	return GameState::LevelComplete;
 }
 
+std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
+{
+	std::vector<sf::RectangleShape> platforms;
+
+	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	platforms.push_back(setupPlatform(50.f, 30.f, 1000.f, 500.f, groundTexture));
+	platforms.push_back(setupPlatform(50.f, 30.f, 1200.f, 430.f, groundTexture));
+	platforms.push_back(setupPlatform(50.f, 30.f, 1400.f, 360.f, groundTexture));
+	platforms.push_back(setupPlatform(400.f, 30.f, 1600.f, 290.f, groundTexture));
+
+	return platforms;
+}
+
+std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
+{
+	std::vector<sf::CircleShape> triangleObstacles;
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
+
+	return triangleObstacles;
+}
 
 int main()
 {
@@ -369,17 +401,8 @@ int main()
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
-	std::vector<sf::RectangleShape> rectanglePlatforms;
-	std::vector<sf::CircleShape> triangleObstacles;
-
-	rectanglePlatforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
-	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1000.f, 500.f, groundTexture));
-	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1200.f, 430.f, groundTexture));
-	rectanglePlatforms.push_back(setupPlatform(50.f, 30.f, 1400.f, 360.f, groundTexture));
-	rectanglePlatforms.push_back(setupPlatform(400.f, 30.f, 1600.f, 290.f, groundTexture));
-
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
+	std::vector<sf::RectangleShape> level1Platform = level1Platforms(groundTexture);
+	std::vector<sf::CircleShape> level1Triangle = level1Triangles(obstacleTexture);
 
 	sf::Font font;
 	if (!font.openFromFile("text.ttf")) { return 1; }
@@ -417,6 +440,8 @@ int main()
 
 		if (gameState == GameState::MainMenu)
 		{
+			window.clear(sf::Color::Black);
+			window.setView(window.getDefaultView());
 			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked);
 		}
 		else if (gameState == GameState::LevelSelection)
@@ -436,9 +461,9 @@ int main()
 
 			if (!dead)
 			{
-				playerGravity(player, rectanglePlatforms, deltaTime, velocityY, gravity, grounded);
+				playerGravity(player, level1Platform, deltaTime, velocityY, gravity, grounded);
 
-				if (playerDeath(player, triangleObstacles))
+				if (playerDeath(player, level1Triangle))
 				{
 					totalDeath++;
 					deaths.setString("Deaths: " + std::to_string(totalDeath));
@@ -470,12 +495,12 @@ int main()
 
 			window.draw(deaths);
 
-			for (auto& i : rectanglePlatforms)
+			for (auto& i : level1Platform)
 			{
 				window.draw(i);
 			}
 
-			for (auto& i : triangleObstacles)
+			for (auto& i : level1Triangle)
 			{
 				window.draw(i);
 			}
