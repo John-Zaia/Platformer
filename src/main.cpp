@@ -301,7 +301,7 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	return GameState::LevelSelection;
 }
 
-GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked)
+GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked, GameState& currentLevel)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -338,7 +338,7 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 		velcoityY = 0.f;
 		camera.setCenter(player.getPosition());
 		clock.restart();
-		return GameState::Level1;
+		return currentLevel;
 	}
 	else if (buttonClick(mainMenuButton, window, mouseClicked))
 	{
@@ -447,6 +447,7 @@ std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
 int main()
 {
 	GameState gameState = GameState::MainMenu;
+	GameState currentLevel;
 	sf::RenderWindow window(sf::VideoMode({ 800, 600 }), "My Window");
 	
 	sf::Texture groundTexture;
@@ -514,6 +515,7 @@ int main()
 		}
 		else if (gameState == GameState::Level1)
 		{
+			currentLevel = GameState::Level1;
 			float deltaTime = clock.restart().asSeconds();
 
 			if (player.getPosition().x >= 2000)
@@ -536,6 +538,7 @@ int main()
 		}
 		else if (gameState == GameState::Level2)
 		{
+			currentLevel = GameState::Level2;
 			float deltaTime = clock.restart().asSeconds();
 
 			if (player.getPosition().x >= 700)
@@ -558,7 +561,7 @@ int main()
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
-			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked);
+			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked, currentLevel);
 		}
 		else if (gameState == GameState::Quit)
 		{
