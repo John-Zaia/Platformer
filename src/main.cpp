@@ -67,17 +67,23 @@ void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 	
 }
 
-void playerJump(float& velocityY, bool& grounded)
+void playerJump(float& velocityY, bool& grounded, bool& gravityReversed)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("jump.mp3");
 	static sf::Sound jumpSound(buffer);
 
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded)
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded && !gravityReversed)
 	{
 		if (soundLoaded) jumpSound.play();
 		velocityY = -400.f;
+		grounded = false;
+	}
+	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded && gravityReversed)
+	{
+		if (soundLoaded) jumpSound.play();
+		velocityY = 400.f;
 		grounded = false;
 	}
 
@@ -137,7 +143,7 @@ sf::Text deathCounter(int deathCounter, sf::Font& font)
 	return totalDeaths;
 }
 
-void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded)
+void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded, bool& gravityReversed)
 {	
 	grounded = false;
 
@@ -148,7 +154,7 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 		{
 			player.setPosition({ rectanglePlatforms[i].getPosition().x - player.getSize().x, player.getPosition().y});
 		}
-		else if (detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
+		else if (!gravityReversed && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
 		{
 			player.setPosition({
 				player.getPosition().x,
@@ -160,14 +166,35 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 			grounded = true;
 			break;
 		}
+		else if (gravityReversed && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY <= 0 && gravityReversed)
+		{
+			player.setPosition({
+				player.getPosition().x,
+				rectanglePlatforms[i].getPosition().y + rectanglePlatforms[i].getSize().y
+				});
+
+
+			velocityY = 0.f;
+			grounded = true;
+			break;
+		}
 	}
 
 	if (!grounded)
 	{
-		velocityY += gravity * deltaTime;
+		if (gravityReversed)
+		{
+			velocityY -= gravity * deltaTime;
+		}
+		else
+		{
+			velocityY += gravity * deltaTime;
+		}
+
 		player.move({ 0.f, velocityY * deltaTime });
 	}
 }
+
 
 enum class GameState
 {
@@ -364,11 +391,11 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 
 void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::RectangleShape>& platform,
 	float& deltaTime, float& velocityY, float& gravity, bool& grounded, std::vector<sf::CircleShape> obstacles,
-	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window)
+	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window, bool& gravityReversed)
 {
 	if (!dead)
 	{
-		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded);
+		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded, gravityReversed);
 
 		if (playerDeath(player, obstacles))
 		{
@@ -379,7 +406,7 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 		}
 		else
 		{
-			playerJump(velocityY, grounded);
+			playerJump(velocityY, grounded, gravityReversed);
 			playerMovement(player, deltaTime, speed);
 		}
 	}
@@ -431,6 +458,7 @@ std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
 	std::vector<sf::RectangleShape> platforms;
 
 	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 300.f, groundTexture));
 
 	return platforms;
 }
@@ -481,6 +509,7 @@ int main()
 	sf::Text deaths = deathCounter(totalDeath, font);
 	sf::Text winText(font);
 	bool mouseClicked = false;
+	bool gravityReversed = false;
 
 	while (window.isOpen())
 	{
@@ -524,7 +553,7 @@ int main()
 			}
 
 			playerState(dead, player, level1Platform, deltaTime, velocityY, gravity, grounded,
-				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window);
+				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
 
 			for (auto& i : level1Platform)
 			{
@@ -546,8 +575,13 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
+			if (player.getPosition().x >= 100)
+			{
+				gravityReversed = true;
+			}
+
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
-				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window);
+				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
 
 			for (auto& i : level2Platform)
 			{
