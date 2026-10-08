@@ -249,7 +249,7 @@ bool buttonClick(Button& button, sf::RenderWindow& window, bool mouseClicked)
 	return false;
 }
 
-GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked)
+GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool& gravityReversed)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -270,6 +270,7 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
 		velocityY = 0.f;
+		gravityReversed = false;
 		camera.setCenter(player.getPosition());
 		clock.restart();
 		return GameState::LevelSelection;
@@ -290,7 +291,7 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	return GameState::MainMenu;
 }
 
-GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked)
+GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool &gravityReversed)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -310,6 +311,7 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
+		gravityReversed = false;
 		velocityY = 0.f;
 		camera.setCenter(player.getPosition());
 		clock.restart();
@@ -319,6 +321,7 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	{
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
+		gravityReversed = false;
 		velocityY = 0.f;
 		camera.setCenter(player.getPosition());
 		clock.restart();
@@ -328,7 +331,7 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	return GameState::LevelSelection;
 }
 
-GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked, GameState& currentLevel)
+GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked, GameState& currentLevel, bool& gravityReversed)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -363,6 +366,7 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 		if (soundLoaded) clickSound.play();
 		player.setPosition({ 25.f, 570.f });
 		velcoityY = 0.f;
+		gravityReversed = false;
 		camera.setCenter(player.getPosition());
 		clock.restart();
 		return currentLevel;
@@ -414,6 +418,7 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 	{
 		if (deathClock.getElapsedTime().asSeconds() >= 1.f)
 		{
+			gravityReversed = false;
 			player.setPosition({ 0.f, 520.f });
 			velocityY = 0.f;
 			dead = false;
@@ -428,6 +433,31 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 	window.draw(player);
 
 	window.draw(deaths);
+}
+
+void portalAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
+{
+	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
+	{
+		portalAnimationClock.restart();
+
+		portalFrame++;
+
+		if (portalFrame >= 8)
+		{
+			portalFrame = 0;
+		}
+
+		int column = portalFrame % 8;
+		int row = portalFrame / 8;
+
+		portal.setTextureRect(
+			sf::IntRect(
+				{ column * 64, row * 64 },
+				{ 64, 64 }
+			)
+		);
+	}
 }
 
 std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
@@ -484,6 +514,13 @@ int main()
 	sf::Texture obstacleTexture;
 	if (!obstacleTexture.loadFromFile("obstacle.jpg")) return 1;
 
+	sf::Texture portalTexture;
+	if (!portalTexture.loadFromFile("portal.png")) return 1;
+	sf::Sprite portal(portalTexture);
+	portal.setScale({ 2.f, 2.f });
+	int portalFrame = 0;
+	sf::Clock portalAnimationClock;
+
 	sf::RectangleShape player;
 	setupPlayer(player);
 
@@ -534,13 +571,13 @@ int main()
 		{
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
-			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked);
+			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
 		}
 		else if (gameState == GameState::LevelSelection)
 		{
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
-			gameState = levelSelection(window, font, player, camera, velocityY, clock, mouseClicked);
+			gameState = levelSelection(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
 		}
 		else if (gameState == GameState::Level1)
 		{
@@ -575,13 +612,18 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
-			if (player.getPosition().x >= 100)
+			if (player.getPosition().x >= 200 && !gravityReversed)
 			{
+				player.move({ 0.f, -2.f });
 				gravityReversed = true;
 			}
 
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
 				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
+
+			portalAnimation(portalAnimationClock, portalFrame, portal);
+			portal.setPosition({ 200.f, 450.f });
+			window.draw(portal);
 
 			for (auto& i : level2Platform)
 			{
@@ -595,7 +637,7 @@ int main()
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
-			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked, currentLevel);
+			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked, currentLevel, gravityReversed);
 		}
 		else if (gameState == GameState::Quit)
 		{
