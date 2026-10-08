@@ -109,6 +109,16 @@ bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
 	return false;
 }
 
+bool detectPortalCollision(sf::RectangleShape& player, sf::Sprite& portal, bool& portalAnimationPlaying)
+{
+	if (player.getGlobalBounds().findIntersection(portal.getGlobalBounds()) && !portalAnimationPlaying)
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
 {
 	static sf::SoundBuffer buffer;
@@ -435,7 +445,7 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 	window.draw(deaths);
 }
 
-void portalAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
+void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
 {
 	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
 	{
@@ -458,6 +468,34 @@ void portalAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Spri
 			)
 		);
 	}
+}
+
+void portalCollisionAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal, bool& portalAnimationPlaying)
+{
+
+	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
+	{
+		portalAnimationClock.restart();
+
+		portalFrame++;
+
+		if (portalFrame >= 16)
+		{
+			portalFrame = 0;
+			portalAnimationPlaying = false;
+		}
+
+		int column = portalFrame % 8;
+		int row = portalFrame / 8;
+
+		portal.setTextureRect(
+			sf::IntRect(
+				{ column * 64, row * 64 },
+				{ 64, 64 }
+			)
+		);
+	}
+
 }
 
 std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
@@ -520,6 +558,10 @@ int main()
 	portal.setScale({ 2.f, 2.f });
 	int portalFrame = 0;
 	sf::Clock portalAnimationClock;
+	bool portalAnimationPlaying = false;
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded = buffer.loadFromFile("portalWoosh.mp3");
+	static sf::Sound portalSound(buffer);
 
 	sf::RectangleShape player;
 	setupPlayer(player);
@@ -621,8 +663,25 @@ int main()
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
 				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
 
-			portalAnimation(portalAnimationClock, portalFrame, portal);
 			portal.setPosition({ 200.f, 450.f });
+
+			if (detectPortalCollision(player, portal, portalAnimationPlaying))
+			{
+				if (soundLoaded) portalSound.play();
+				portalAnimationPlaying = true;
+				portalFrame = 8;
+				portalAnimationClock.restart();
+			}
+
+			if (portalAnimationPlaying)
+			{
+				portalCollisionAnimation(portalAnimationClock, portalFrame, portal, portalAnimationPlaying);
+			}
+			else
+			{
+				portalIdleAnimation(portalAnimationClock, portalFrame, portal);
+			}
+
 			window.draw(portal);
 
 			for (auto& i : level2Platform)
