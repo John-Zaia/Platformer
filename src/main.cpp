@@ -39,6 +39,16 @@ sf::CircleShape setupTriangle(float radius, int points, float xPosition, float y
 	return triangle;
 }
 
+sf::Sprite setupPortal(float xPosition, float yPosition, float xScale, float yScale, sf::Texture& portalTexture)
+{
+
+	sf::Sprite portal(portalTexture);
+	portal.setScale({ xScale, yScale });
+	portal.setPosition({ xPosition, yPosition });
+
+	return portal;
+}
+
 void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
 {
 	bool switchMovement = false;
@@ -540,6 +550,15 @@ std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
 	return triangleObstacles;
 }
 
+std::vector<sf::Sprite> level2Portals(sf::Texture& portalTexture)
+{
+	std::vector<sf::Sprite> portals;
+
+	portals.push_back(setupPortal(200.f, 450.f, 2.f, 2.f, portalTexture));
+
+	return portals;
+}
+
 int main()
 {
 	GameState gameState = GameState::MainMenu;
@@ -555,13 +574,12 @@ int main()
 	sf::Texture portalTexture;
 	if (!portalTexture.loadFromFile("portal.png")) return 1;
 	sf::Sprite portal(portalTexture);
-	portal.setScale({ 2.f, 2.f });
 	int portalFrame = 0;
 	sf::Clock portalAnimationClock;
 	bool portalAnimationPlaying = false;
-	static sf::SoundBuffer buffer;
-	static bool soundLoaded = buffer.loadFromFile("portalWoosh.mp3");
-	static sf::Sound portalSound(buffer);
+	sf::SoundBuffer buffer;
+	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
+	sf::Sound portalSound(buffer);
 
 	sf::RectangleShape player;
 	setupPlayer(player);
@@ -573,6 +591,7 @@ int main()
 
 	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
 	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
+	std::vector<sf::Sprite> level2Portal = level2Portals(portalTexture);
 
 	sf::Font font;
 	if (!font.openFromFile("text.ttf")) { return 1; }
@@ -654,35 +673,32 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
-			if (player.getPosition().x >= 200 && !gravityReversed)
-			{
-				player.move({ 0.f, -2.f });
-				gravityReversed = true;
-			}
-
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
 				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
 
-			portal.setPosition({ 200.f, 450.f });
-
-			if (detectPortalCollision(player, portal, portalAnimationPlaying))
+			for (auto& portals : level2Portal)
 			{
-				if (soundLoaded) portalSound.play();
-				portalAnimationPlaying = true;
-				portalFrame = 8;
-				portalAnimationClock.restart();
-			}
+				if (detectPortalCollision(player, portals, portalAnimationPlaying) && !gravityReversed)
+				{
+					player.move({ 0.f, -2.f });
+					gravityReversed = true;
+					portalSound.play();
+					portalAnimationPlaying = true;
+					portalFrame = 8;
+					portalAnimationClock.restart();
+				}
 
-			if (portalAnimationPlaying)
-			{
-				portalCollisionAnimation(portalAnimationClock, portalFrame, portal, portalAnimationPlaying);
-			}
-			else
-			{
-				portalIdleAnimation(portalAnimationClock, portalFrame, portal);
-			}
+				if (portalAnimationPlaying)
+				{
+					portalCollisionAnimation(portalAnimationClock, portalFrame, portals, portalAnimationPlaying);
+				}
+				else
+				{
+					portalIdleAnimation(portalAnimationClock, portalFrame, portals);
+				}
 
-			window.draw(portal);
+				window.draw(portals);
+			}
 
 			for (auto& i : level2Platform)
 			{
