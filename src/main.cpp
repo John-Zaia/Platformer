@@ -99,6 +99,15 @@ void playerJump(float& velocityY, bool& grounded, bool& gravityReversed)
 
 }
 
+void resetPlayer(sf::RectangleShape& player, bool& gravityReversed, float& velocityY, sf::View& camera, sf::Clock& clock)
+{
+	player.setPosition({ 25.f, 570.f });
+	gravityReversed = false;
+	velocityY = 0.f;
+	camera.setCenter(player.getPosition());
+	clock.restart();
+}
+
 bool detectPlatformCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
 {
 	if (player.getGlobalBounds().findIntersection(platform.getGlobalBounds()))
@@ -288,11 +297,7 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	if(buttonClick(playButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		player.setPosition({ 25.f, 570.f });
-		velocityY = 0.f;
-		gravityReversed = false;
-		camera.setCenter(player.getPosition());
-		clock.restart();
+		resetPlayer(player, gravityReversed, velocityY, camera, clock);
 		return GameState::LevelSelection;
 	}
 	else if (buttonClick(quitButton, window, mouseClicked))
@@ -330,21 +335,13 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	if (buttonClick(level1Button, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		player.setPosition({ 25.f, 570.f });
-		gravityReversed = false;
-		velocityY = 0.f;
-		camera.setCenter(player.getPosition());
-		clock.restart();
+		resetPlayer(player, gravityReversed, velocityY, camera, clock);
 		return GameState::Level1;
 	}
 	else if(buttonClick(level2Button, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		player.setPosition({ 25.f, 570.f });
-		gravityReversed = false;
-		velocityY = 0.f;
-		camera.setCenter(player.getPosition());
-		clock.restart();
+		resetPlayer(player, gravityReversed, velocityY, camera, clock);
 		return GameState::Level2;
 	}
 
@@ -384,11 +381,7 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	if (buttonClick(replayButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		player.setPosition({ 25.f, 570.f });
-		velcoityY = 0.f;
-		gravityReversed = false;
-		camera.setCenter(player.getPosition());
-		clock.restart();
+		resetPlayer(player, gravityReversed, velcoityY, camera, clock);
 		return currentLevel;
 	}
 	else if (buttonClick(mainMenuButton, window, mouseClicked))
@@ -406,7 +399,6 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 				sf::sleep(sf::milliseconds(1));
 			}
 		}
-		player.setPosition({ 25.f, 570.f });
 		return GameState::Quit;
 	}
 
