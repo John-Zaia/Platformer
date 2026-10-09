@@ -3,13 +3,47 @@
 #include <SFML/Audio.hpp>
 #include <string>
 
-void setupPlayer(sf::RectangleShape& player, sf::Texture& playerTexture)
+void setupPlayer(sf::RectangleShape& player)
 {
 	player.setSize(sf::Vector2f(64.f, 64.f));
-	player.setTexture(&playerTexture);
-	player.setTextureRect(sf::IntRect({ 0, 0 }, { 50, 50 }));
 	player.setPosition({ 25.f, 570.f });
 	
+}
+
+void playerRunningAnimation(sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::RectangleShape& player, sf::Texture& playerRunTexture, sf::Texture&playerRunUpsideDown, bool& gravityReversed)
+{
+
+	if (gravityReversed)
+	{
+		player.setTexture(&playerRunUpsideDown);
+	}
+	else if(!gravityReversed)
+	{
+		player.setTexture(&playerRunTexture);
+	}
+
+	if (playerRunningAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
+	{
+		playerRunningAnimationClock.restart();
+
+		playerFrame++;
+
+		if (playerFrame >= 8)
+		{
+			playerFrame = 0;
+		}
+
+		int column = playerFrame % 8;
+		int row = playerFrame / 8;
+
+		player.setTextureRect(
+			sf::IntRect(
+				{ column * 64, row * 64 },
+				{ 64, 64 }
+			)
+		);
+	}
+
 }
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
@@ -202,7 +236,6 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 				player.getPosition().x,
 				rectanglePlatforms[i].getPosition().y + rectanglePlatforms[i].getSize().y
 				});
-
 
 			velocityY = 0.f;
 			grounded = true;
@@ -408,10 +441,12 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 
 void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::RectangleShape>& platform,
 	float& deltaTime, float& velocityY, float& gravity, bool& grounded, std::vector<sf::CircleShape> obstacles,
-	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window, bool& gravityReversed)
+	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window,
+	bool& gravityReversed, sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::Texture& playerRunTexture, sf::Texture& playerRunUpsideDown)
 {
 	if (!dead)
 	{
+		playerRunningAnimation(playerRunningAnimationClock, playerFrame, player, playerRunTexture, playerRunUpsideDown, gravityReversed);
 		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded, gravityReversed);
 
 		if (playerDeath(player, obstacles))
@@ -574,10 +609,17 @@ int main()
 	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
 	sf::Sound portalSound(buffer);
 
-	sf::Texture playerTexture;
-	if (!playerTexture.loadFromFile("playerJump.png")) return 1;
+	sf::Texture playerRunTexture;
+	if (!playerRunTexture.loadFromFile("playerRun.png")) return 1;
+	sf::Texture playerRunUpsideDownTexture;
+	if (!playerRunUpsideDownTexture.loadFromFile("playerRunUpsideDown.png")) return 1;
+	sf::Clock playerRunningAnimationClock;
+	int playerFrame = 0;
+	sf::Texture playerJumpTexture;
+	if (!playerJumpTexture.loadFromFile("playerJump.png")) return 1;
 	sf::RectangleShape player;
-	setupPlayer(player, playerTexture);
+	setupPlayer(player);
+	player.setTexture(&playerRunTexture);
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
@@ -646,7 +688,7 @@ int main()
 			}
 
 			playerState(dead, player, level1Platform, deltaTime, velocityY, gravity, grounded,
-				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
+				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed, playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture);
 
 			for (auto& i : level1Platform)
 			{
@@ -669,7 +711,7 @@ int main()
 			}
 
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
-				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed);
+				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed, playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture);
 
 			for (auto& portals : level2Portal)
 			{
