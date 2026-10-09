@@ -3,10 +3,11 @@
 #include <SFML/Audio.hpp>
 #include <string>
 
-void setupPlayer(sf::RectangleShape& player)
+void setupPlayer(sf::RectangleShape& player, sf::Texture& playerTexture)
 {
-	player.setSize(sf::Vector2f(50.f, 50.f));
-	player.setFillColor(sf::Color(100, 250, 50));
+	player.setSize(sf::Vector2f(64.f, 64.f));
+	player.setTexture(&playerTexture);
+	player.setTextureRect(sf::IntRect({ 0, 0 }, { 50, 50 }));
 	player.setPosition({ 25.f, 570.f });
 	
 }
@@ -573,8 +574,10 @@ int main()
 	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
 	sf::Sound portalSound(buffer);
 
+	sf::Texture playerTexture;
+	if (!playerTexture.loadFromFile("playerJump.png")) return 1;
 	sf::RectangleShape player;
-	setupPlayer(player);
+	setupPlayer(player, playerTexture);
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
