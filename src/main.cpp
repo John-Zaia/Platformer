@@ -10,16 +10,23 @@ void setupPlayer(sf::RectangleShape& player)
 	
 }
 
-void playerRunningAnimation(sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::RectangleShape& player, sf::Texture& playerRunTexture, sf::Texture&playerRunUpsideDown, bool& gravityReversed)
+void playerRunningAnimation(sf::Clock& playerRunningAnimationClock, int& playerFrame,
+							sf::RectangleShape& player, sf::Texture& playerRunTexture,
+							sf::Texture& playerRunUpsideDown, sf::Texture& playerJumpTexture,
+							bool& gravityReversed, bool& grounded)
 {
 
 	if (gravityReversed)
 	{
 		player.setTexture(&playerRunUpsideDown);
 	}
-	else if(!gravityReversed)
+	else if (!gravityReversed && grounded)
 	{
 		player.setTexture(&playerRunTexture);
+	}
+	else if (!gravityReversed && !grounded)
+	{
+		player.setTexture(&playerJumpTexture);
 	}
 
 	if (playerRunningAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
@@ -209,7 +216,6 @@ sf::Text deathCounter(int deathCounter, sf::Font& font)
 
 void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded, bool& gravityReversed)
 {	
-	grounded = false;
 
 	for (int i = 0; i < rectanglePlatforms.size(); i++)
 	{
@@ -442,12 +448,12 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::RectangleShape>& platform,
 	float& deltaTime, float& velocityY, float& gravity, bool& grounded, std::vector<sf::CircleShape> obstacles,
 	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window,
-	bool& gravityReversed, sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::Texture& playerRunTexture, sf::Texture& playerRunUpsideDown)
+	bool& gravityReversed, sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::Texture& playerRunTexture, sf::Texture& playerRunUpsideDown, sf::Texture& playerJumpTexture)
 {
 	if (!dead)
 	{
-		playerRunningAnimation(playerRunningAnimationClock, playerFrame, player, playerRunTexture, playerRunUpsideDown, gravityReversed);
 		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded, gravityReversed);
+		playerRunningAnimation(playerRunningAnimationClock, playerFrame, player, playerRunTexture, playerRunUpsideDown, playerJumpTexture, gravityReversed, grounded);
 
 		if (playerDeath(player, obstacles))
 		{
@@ -688,7 +694,8 @@ int main()
 			}
 
 			playerState(dead, player, level1Platform, deltaTime, velocityY, gravity, grounded,
-				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed, playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture);
+				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
+				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture);
 
 			for (auto& i : level1Platform)
 			{
@@ -711,7 +718,8 @@ int main()
 			}
 
 			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
-				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed, playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture);
+				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
+				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture);
 
 			for (auto& portals : level2Portal)
 			{
