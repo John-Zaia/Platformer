@@ -24,7 +24,7 @@ void playerRunningAnimation(sf::Clock& playerRunningAnimationClock, int& playerF
 	{
 		player.setTexture(&playerRunTexture);
 	}
-	else if (!gravityReversed && !grounded)
+	else if (!gravityReversed && !grounded && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
 	{
 		player.setTexture(&playerJumpTexture);
 	}
@@ -216,6 +216,7 @@ sf::Text deathCounter(int deathCounter, sf::Font& font)
 
 void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded, bool& gravityReversed)
 {	
+	grounded = false;
 
 	for (int i = 0; i < rectanglePlatforms.size(); i++)
 	{
