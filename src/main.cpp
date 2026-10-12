@@ -498,27 +498,27 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 
 void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
 {
-	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-	{
-		portalAnimationClock.restart();
-
-		portalFrame++;
-
-		if (portalFrame >= 8)
+		if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
 		{
-			portalFrame = 0;
+			portalAnimationClock.restart();
+
+			portalFrame++;
+
+			if (portalFrame >= 8)
+			{
+				portalFrame = 0;
+			}
+
+			int column = portalFrame % 8;
+			int row = portalFrame / 8;
+
+			portal.setTextureRect(
+				sf::IntRect(
+					{ column * 64, row * 64 },
+					{ 64, 64 }
+				)
+			);
 		}
-
-		int column = portalFrame % 8;
-		int row = portalFrame / 8;
-
-		portal.setTextureRect(
-			sf::IntRect(
-				{ column * 64, row * 64 },
-				{ 64, 64 }
-			)
-		);
-	}
 }
 
 void portalCollisionAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal, bool& portalAnimationPlaying)
@@ -576,7 +576,7 @@ std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
 {
 	std::vector<sf::RectangleShape> platforms;
 
-	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	platforms.push_back(setupPlatform(1500.f, 30.f, 0.f, 570.f, groundTexture));
 	platforms.push_back(setupPlatform(1500.f, 30.f, 0.f, 300.f, groundTexture));
 
 	return platforms;
@@ -596,9 +596,17 @@ std::vector<sf::Sprite> level2Portals(sf::Texture& portalTexture)
 	std::vector<sf::Sprite> portals;
 
 	portals.push_back(setupPortal(200.f, 450.f, 2.f, 2.f, portalTexture));
+	portals.push_back(setupPortal(800.f, 300.f, 2.f, 2.f, portalTexture));
 
 	return portals;
 }
+
+struct PortalAnimation
+{
+	sf::Clock clock;
+	int frame = 0;
+	bool playing = false;
+};
 
 int main()
 {
@@ -614,10 +622,7 @@ int main()
 
 	sf::Texture portalTexture;
 	if (!portalTexture.loadFromFile("portal.png")) return 1;
-	sf::Sprite portal(portalTexture);
-	int portalFrame = 0;
-	sf::Clock portalAnimationClock;
-	bool portalAnimationPlaying = false;
+	std::vector<PortalAnimation> portalAnimations;
 	sf::SoundBuffer buffer;
 	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
 	sf::Sound portalSound(buffer);
@@ -644,6 +649,7 @@ int main()
 	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
 	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
 	std::vector<sf::Sprite> level2Portal = level2Portals(portalTexture);
+	portalAnimations.resize(level2Portal.size());
 
 	sf::Font font;
 	if (!font.openFromFile("text.ttf")) { return 1; }
@@ -730,28 +736,39 @@ int main()
 				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
 				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
 
-			for (auto& portals : level2Portal)
+			for (std::size_t i = 0; i < level2Portal.size(); i++)
 			{
-				if (detectPortalCollision(player, portals, portalAnimationPlaying) && !gravityReversed)
+				auto& portal = level2Portal[i];
+				auto& animation = portalAnimations[i];
+
+				if (detectPortalCollision(player, portal, animation.playing))
 				{
-					player.move({ 0.f, -2.f });
-					gravityReversed = true;
+					if (!gravityReversed)
+					{
+						player.move({ 0.f, -2.f });
+					}
+					else if (gravityReversed)
+					{
+						player.move({ 0.f, 2.f });
+					}
+					gravityReversed = !gravityReversed;
 					portalSound.play();
-					portalAnimationPlaying = true;
-					portalFrame = 8;
-					portalAnimationClock.restart();
+
+					animation.playing = true;
+					animation.frame = 8;
+					animation.clock.restart();
 				}
 
-				if (portalAnimationPlaying)
+				if (animation.playing)
 				{
-					portalCollisionAnimation(portalAnimationClock, portalFrame, portals, portalAnimationPlaying);
+					portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
 				}
 				else
 				{
-					portalIdleAnimation(portalAnimationClock, portalFrame, portals);
+					portalIdleAnimation(animation.clock, animation.frame, portal);
 				}
 
-				window.draw(portals);
+				window.draw(portal);
 			}
 
 			for (auto& i : level2Platform)
