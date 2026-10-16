@@ -572,6 +572,15 @@ std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
 	return triangleObstacles;
 }
 
+std::vector<sf::Sprite> level1Portals(sf::Texture& portalTexture)
+{
+	std::vector<sf::Sprite> portals;
+
+	portals.push_back(setupPortal(1800.f, 180.f, 2.f, 2.f, portalTexture));
+
+	return portals;
+}
+
 std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
 {
 	std::vector<sf::RectangleShape> platforms;
@@ -622,7 +631,6 @@ int main()
 
 	sf::Texture portalTexture;
 	if (!portalTexture.loadFromFile("portal.png")) return 1;
-	std::vector<PortalAnimation> portalAnimations;
 	sf::SoundBuffer buffer;
 	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
 	sf::Sound portalSound(buffer);
@@ -643,8 +651,11 @@ int main()
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
+	std::vector<PortalAnimation> portalAnimations;
 	std::vector<sf::RectangleShape> level1Platform = level1Platforms(groundTexture);
 	std::vector<sf::CircleShape> level1Triangle = level1Triangles(obstacleTexture);
+	std::vector<sf::Sprite> level1Portal = level1Portals(portalTexture);
+	portalAnimations.resize(level1Portal.size());
 
 	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
 	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
@@ -712,6 +723,42 @@ int main()
 				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
 				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
 
+			for (std::size_t i = 0; i < level1Portal.size(); i++)
+			{
+				auto& portal = level1Portal[i];
+				auto& animation = portalAnimations[i];
+
+				if (detectPortalCollision(player, portal, animation.playing))
+				{
+					if (!gravityReversed)
+					{
+						player.move({ 0.f, -2.f });
+					}
+					else if (gravityReversed)
+					{
+						player.move({ 0.f, 2.f });
+					}
+					gravityReversed = !gravityReversed;
+					portalSound.play();
+
+					animation.playing = true;
+					animation.frame = 8;
+					animation.clock.restart();
+				}
+
+				if (animation.playing)
+				{
+					portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
+				}
+				else
+				{
+					portalIdleAnimation(animation.clock, animation.frame, portal);
+				}
+
+				window.draw(portal);
+
+			}
+
 			for (auto& i : level1Platform)
 			{
 				window.draw(i);
@@ -721,6 +768,7 @@ int main()
 			{
 				window.draw(i);
 			}
+
 		}
 		else if (gameState == GameState::Level2)
 		{
