@@ -274,6 +274,7 @@ void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& 
 enum class GameState
 {
 	MainMenu,
+	PauseMenu,
 	LevelSelection,
 	Level1,
 	Level2,
@@ -360,6 +361,28 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	}
 
 	return GameState::MainMenu;
+}
+
+GameState pauseMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool& gravityReversed)
+{
+	static sf::SoundBuffer buffer;
+	static bool soundLoaded = buffer.loadFromFile("click.mp3");
+	static sf::Sound clickSound(buffer);
+
+
+	Button mainMenuButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Main Menu");
+	buttonHoverHighlight(mainMenuButton, window);
+	window.draw(mainMenuButton.shape);
+	window.draw(mainMenuButton.text);
+
+	if (buttonClick(mainMenuButton, window, mouseClicked))
+	{
+		if (soundLoaded) clickSound.play();
+		resetPlayer(player, gravityReversed, velocityY, camera, clock);
+		return GameState::MainMenu;
+	}
+
+	return GameState::PauseMenu;
 }
 
 GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool &gravityReversed)
@@ -687,6 +710,14 @@ int main()
 			if (event->is<sf::Event::Closed>())
 				window.close();
 
+			if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>())
+			{
+				if (keyPressed->code == sf::Keyboard::Key::Escape)
+				{
+					gameState = GameState::PauseMenu;
+				}
+			}
+
 			if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>())
 			{
 				if (mouseButton->button == sf::Mouse::Button::Left)
@@ -702,6 +733,12 @@ int main()
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
 			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
+		}
+		else if (gameState == GameState::PauseMenu)
+		{
+			window.clear(sf::Color::Black);
+			window.setView(window.getDefaultView());
+			gameState = pauseMenu(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
 		}
 		else if (gameState == GameState::LevelSelection)
 		{
