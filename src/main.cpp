@@ -72,12 +72,13 @@ sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, flo
 	return platform;
 }
 
-sf::CircleShape setupTriangle(float radius, int points, float xPosition, float yPosition, sf::Texture& triangleTexture)
+sf::CircleShape setupTriangle(float radius, int points, float xPosition, float yPosition, float rotation, sf::Texture& triangleTexture)
 {
 	sf::CircleShape triangle;
 	triangle.setRadius(radius);
 	triangle.setPointCount(points);
 	triangle.setPosition({ xPosition, yPosition });
+	triangle.setRotation(sf::degrees(rotation));
 
 	triangle.setTexture(&triangleTexture);
 	triangleTexture.setRepeated(true);
@@ -589,8 +590,8 @@ std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
 {
 	std::vector<sf::CircleShape> triangleObstacles;
 
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, 0.f, obstacleTexture));
 
 	return triangleObstacles;
 }
@@ -618,7 +619,7 @@ std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
 {
 	std::vector<sf::CircleShape> triangleObstacles;
 
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture));
 
 	return triangleObstacles;
 }
