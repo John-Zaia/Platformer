@@ -577,11 +577,25 @@ std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
 {
 	std::vector<sf::RectangleShape> platforms;
 
+	// Starting platform
 	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
-	platforms.push_back(setupPlatform(50.f, 30.f, 1000.f, 500.f, groundTexture));
-	platforms.push_back(setupPlatform(50.f, 30.f, 1200.f, 430.f, groundTexture));
-	platforms.push_back(setupPlatform(50.f, 30.f, 1400.f, 360.f, groundTexture));
-	platforms.push_back(setupPlatform(400.f, 30.f, 1600.f, 290.f, groundTexture));
+
+	// Staircase 
+	platforms.push_back(setupPlatform(50.f, 30.f, 950.f, 500.f, groundTexture));
+	platforms.push_back(setupPlatform(50.f, 30.f, 1150.f, 430.f, groundTexture));
+	platforms.push_back(setupPlatform(50.f, 30.f, 1350.f, 360.f, groundTexture));
+
+	// Landing platform before the first portal
+	platforms.push_back(setupPlatform(200.f, 30.f, 1550.f, 290.f, groundTexture));
+
+	// Ceiling for the gravity-reversed section
+	platforms.push_back(setupPlatform(1050.f, 30.f, 1550.f, 0.f, groundTexture));
+
+	// Floor beneath the gravity-reversed section
+	platforms.push_back(setupPlatform(800.f, 30.f, 1800.f, 570.f, groundTexture));
+
+	// Final stretch
+	platforms.push_back(setupPlatform(1400.f, 30.f, 2600.f, 570.f, groundTexture));
 
 	return platforms;
 }
@@ -590,8 +604,23 @@ std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
 {
 	std::vector<sf::CircleShape> triangleObstacles;
 
+	// Introductory obstacles
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture));
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, 0.f, obstacleTexture));
+
+	// Ceiling obstacles
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2100.f, 60.f, 180.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2150.f, 60.f, 180.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2200.f, 60.f, 180.f, obstacleTexture));
+
+	// Final obstacles
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3100.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3130.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3160.f, 540.f, 0.f, obstacleTexture));
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3550.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3580.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3610.f, 540.f, 0.f, obstacleTexture));
 
 	return triangleObstacles;
 }
@@ -600,7 +629,11 @@ std::vector<sf::Sprite> level1Portals(sf::Texture& portalTexture)
 {
 	std::vector<sf::Sprite> portals;
 
-	portals.push_back(setupPortal(1800.f, 180.f, 2.f, 2.f, portalTexture));
+	// Reverse gravity
+	portals.push_back(setupPortal(1650.f, 175.f, 2.f, 2.f, portalTexture));
+
+	// Restore normal gravity
+	portals.push_back(setupPortal(2450.f, 30.f, 2.f, 2.f, portalTexture));
 
 	return portals;
 }
@@ -752,7 +785,7 @@ int main()
 			currentLevel = GameState::Level1;
 			float deltaTime = clock.restart().asSeconds();
 
-			if (player.getPosition().x >= 2000)
+			if (player.getPosition().x >= 4000)
 			{
 				gameState = GameState::LevelComplete;
 			}
