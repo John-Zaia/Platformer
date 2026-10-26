@@ -642,8 +642,18 @@ std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
 {
 	std::vector<sf::RectangleShape> platforms;
 
-	platforms.push_back(setupPlatform(1500.f, 30.f, 0.f, 570.f, groundTexture));
-	platforms.push_back(setupPlatform(1500.f, 30.f, 0.f, 300.f, groundTexture));
+	// Ceiling for the whole level 
+	platforms.push_back(setupPlatform(4800.f, 30.f, 0.f, 300.f, groundTexture));
+
+	// Zone 1 floor
+	platforms.push_back(setupPlatform(1650.f, 30.f, 0.f, 570.f, groundTexture));
+
+	// Zone 2 floor, starts after the 200px pit and holds the first portal
+	platforms.push_back(setupPlatform(550.f, 30.f, 1850.f, 570.f, groundTexture));
+
+	// Zone 3 floor, starts well before the second portal's landing spot
+	platforms.push_back(setupPlatform(1500.f, 30.f, 3300.f, 570.f, groundTexture));
+
 
 	return platforms;
 }
@@ -652,7 +662,31 @@ std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
 {
 	std::vector<sf::CircleShape> triangleObstacles;
 
+	// Zone 1: floor spikes, growing from 1 to 3
 	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture));
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 800.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 830.f, 540.f, 0.f, obstacleTexture));
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 1200.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 1230.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 1260.f, 540.f, 0.f, obstacleTexture));
+
+	// Zone 2: ceiling spikes 
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2700.f, 360.f, 180.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2730.f, 360.f, 180.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 2760.f, 360.f, 180.f, obstacleTexture));
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3100.f, 360.f, 180.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3130.f, 360.f, 180.f, obstacleTexture));
+
+	// Zone 3: floor spikes after gravity is restored
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3950.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 3980.f, 540.f, 0.f, obstacleTexture));
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 4010.f, 540.f, 0.f, obstacleTexture));
+
+	triangleObstacles.push_back(setupTriangle(20.f, 3, 4400.f, 540.f, 0.f, obstacleTexture));
+
 
 	return triangleObstacles;
 }
@@ -661,8 +695,12 @@ std::vector<sf::Sprite> level2Portals(sf::Texture& portalTexture)
 {
 	std::vector<sf::Sprite> portals;
 
-	portals.push_back(setupPortal(200.f, 450.f, 2.f, 2.f, portalTexture));
-	portals.push_back(setupPortal(800.f, 300.f, 2.f, 2.f, portalTexture));
+	// Reverse gravity
+	portals.push_back(setupPortal(2250.f, 442.f, 2.f, 2.f, portalTexture));
+
+	// Restore gravity
+	portals.push_back(setupPortal(3500.f, 330.f, 2.f, 2.f, portalTexture));
+
 
 	return portals;
 }
@@ -846,7 +884,7 @@ int main()
 			currentLevel = GameState::Level2;
 			float deltaTime = clock.restart().asSeconds();
 
-			if (player.getPosition().x >= 1500)
+			if (player.getPosition().x >= 4800)
 			{
 				gameState = GameState::LevelComplete;
 			}
