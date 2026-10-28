@@ -932,19 +932,10 @@ int main()
 				{
 					portalIdleAnimation(animation.clock, animation.frame, portal);
 				}
-
-				window.draw(portal);
 			}
 
-			for (auto& i : level2Platform)
-			{
-				window.draw(i);
-			}
-
-			for (auto& i : level2Triangle)
-			{
-				window.draw(i);
-			}
+			window.clear();
+			drawGame(window, player, level2Portal, level2Platform, level2Triangle, deaths);
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
