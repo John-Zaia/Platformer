@@ -514,10 +514,6 @@ void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::Rectang
 	camera.setCenter(player.getPosition());
 	window.setView(camera);
 
-	window.clear(sf::Color::Black);
-	window.draw(player);
-
-	window.draw(deaths);
 }
 
 void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
@@ -712,6 +708,27 @@ struct PortalAnimation
 	bool playing = false;
 };
 
+void drawGame(sf::RenderWindow& window,
+	sf::RectangleShape& player,
+	std::vector<sf::Sprite>& portals,
+	std::vector<sf::RectangleShape>& platforms,
+	std::vector<sf::CircleShape>& triangles,
+	sf::Text& deaths)
+{
+	window.draw(player);
+
+	for (auto& portal : portals)
+		window.draw(portal);
+
+	for (auto& platform : platforms)
+		window.draw(platform);
+
+	for (auto& triangle : triangles)
+		window.draw(triangle);
+
+	window.draw(deaths);
+}
+
 int main()
 {
 	GameState gameState = GameState::MainMenu;
@@ -864,19 +881,10 @@ int main()
 					portalIdleAnimation(animation.clock, animation.frame, portal);
 				}
 
-				window.draw(portal);
-
 			}
 
-			for (auto& i : level1Platform)
-			{
-				window.draw(i);
-			}
-
-			for (auto& i : level1Triangle)
-			{
-				window.draw(i);
-			}
+			window.clear();
+			drawGame(window, player, level1Portal, level1Platform, level1Triangle, deaths);
 
 		}
 		else if (gameState == GameState::Level2)
