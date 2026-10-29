@@ -708,6 +708,48 @@ struct PortalAnimation
 	bool playing = false;
 };
 
+void updatePortals(
+	sf::RectangleShape& player,
+	std::vector<sf::Sprite>& portals,
+	std::vector<PortalAnimation>& portalAnimations,
+	bool& gravityReversed,
+	sf::Sound& portalSound)
+{
+	for (std::size_t i = 0; i < portals.size(); i++)
+	{
+		auto& portal = portals[i];
+		auto& animation = portalAnimations[i];
+
+		if (detectPortalCollision(player, portal, animation.playing))
+		{
+			if (!gravityReversed)
+			{
+				player.move({ 0.f, -2.f });
+			}
+			else if (gravityReversed)
+			{
+				player.move({ 0.f, 2.f });
+			}
+			gravityReversed = !gravityReversed;
+			portalSound.play();
+
+			animation.playing = true;
+			animation.frame = 8;
+			animation.clock.restart();
+		}
+
+		if (animation.playing)
+		{
+			portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
+		}
+		else
+		{
+			portalIdleAnimation(animation.clock, animation.frame, portal);
+		}
+
+	}
+}
+
 void drawGame(sf::RenderWindow& window,
 	sf::RectangleShape& player,
 	std::vector<sf::Sprite>& portals,
@@ -849,39 +891,7 @@ int main()
 				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
 				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
 
-			for (std::size_t i = 0; i < level1Portal.size(); i++)
-			{
-				auto& portal = level1Portal[i];
-				auto& animation = portalAnimations[i];
-
-				if (detectPortalCollision(player, portal, animation.playing))
-				{
-					if (!gravityReversed)
-					{
-						player.move({ 0.f, -2.f });
-					}
-					else if (gravityReversed)
-					{
-						player.move({ 0.f, 2.f });
-					}
-					gravityReversed = !gravityReversed;
-					portalSound.play();
-
-					animation.playing = true;
-					animation.frame = 8;
-					animation.clock.restart();
-				}
-
-				if (animation.playing)
-				{
-					portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
-				}
-				else
-				{
-					portalIdleAnimation(animation.clock, animation.frame, portal);
-				}
-
-			}
+			updatePortals(player, level1Portal, portalAnimations, gravityReversed, portalSound);
 
 			window.clear();
 			drawGame(window, player, level1Portal, level1Platform, level1Triangle, deaths);
@@ -901,38 +911,7 @@ int main()
 				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
 				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
 
-			for (std::size_t i = 0; i < level2Portal.size(); i++)
-			{
-				auto& portal = level2Portal[i];
-				auto& animation = portalAnimations[i];
-
-				if (detectPortalCollision(player, portal, animation.playing))
-				{
-					if (!gravityReversed)
-					{
-						player.move({ 0.f, -2.f });
-					}
-					else if (gravityReversed)
-					{
-						player.move({ 0.f, 2.f });
-					}
-					gravityReversed = !gravityReversed;
-					portalSound.play();
-
-					animation.playing = true;
-					animation.frame = 8;
-					animation.clock.restart();
-				}
-
-				if (animation.playing)
-				{
-					portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
-				}
-				else
-				{
-					portalIdleAnimation(animation.clock, animation.frame, portal);
-				}
-			}
+			updatePortals(player, level2Portal, portalAnimations, gravityReversed, portalSound);
 
 			window.clear();
 			drawGame(window, player, level2Portal, level2Platform, level2Triangle, deaths);
