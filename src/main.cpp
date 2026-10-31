@@ -2,61 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <string>
-
-void setupPlayer(sf::RectangleShape& player)
-{
-	player.setSize(sf::Vector2f(64.f, 64.f));
-	player.setPosition({ 25.f, 570.f });
-	
-}
-
-void playerRunningAnimation(sf::Clock& playerRunningAnimationClock, int& playerFrame,
-							sf::RectangleShape& player, sf::Texture& playerRunTexture,
-							sf::Texture& playerRunUpsideDown, sf::Texture& playerJumpTexture,
-							sf::Texture& playerJumpUpsideDownTexture, bool& gravityReversed, bool& grounded)
-{
-
-
-	if (gravityReversed && !grounded && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-	{
-		player.setTexture(&playerJumpUpsideDownTexture);
-	}
-	else if (gravityReversed && grounded)
-	{
-		player.setTexture(&playerRunUpsideDown);
-	}
-	else if (!gravityReversed && grounded)
-	{
-		player.setTexture(&playerRunTexture);
-	}
-	else if (!gravityReversed && !grounded && sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-	{
-		player.setTexture(&playerJumpTexture);
-	}
-
-	if (playerRunningAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-	{
-		playerRunningAnimationClock.restart();
-
-		playerFrame++;
-
-		if (playerFrame >= 8)
-		{
-			playerFrame = 0;
-		}
-
-		int column = playerFrame % 8;
-		int row = playerFrame / 8;
-
-		player.setTextureRect(
-			sf::IntRect(
-				{ column * 64, row * 64 },
-				{ 64, 64 }
-			)
-		);
-	}
-
-}
+#include "Player.h"
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
 {
@@ -97,118 +43,7 @@ sf::Sprite setupPortal(float xPosition, float yPosition, float xScale, float ySc
 	return portal;
 }
 
-void playerMovement(sf::RectangleShape& player, float deltaTime, float speed)
-{
-	bool switchMovement = false;
 
-	//movement for debugging
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space))
-	{
-		switchMovement = true;
-	}
-
-	if (switchMovement == false)
-	{
-		player.move({ speed * deltaTime, 0.f });
-	}
-	else
-	{
-		if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right) && player.getPosition().x < 750)
-		{
-			player.move({ speed * deltaTime, 0.f });
-		}
-		else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left) && player.getPosition().x > 0)
-		{
-			player.move({ -speed * deltaTime, 0.f });
-		}
-	}
-	
-}
-
-void playerJump(float& velocityY, bool& grounded, bool& gravityReversed)
-{
-	static sf::SoundBuffer buffer;
-	static bool soundLoaded = buffer.loadFromFile("jump.mp3");
-	static sf::Sound jumpSound(buffer);
-
-
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded && !gravityReversed)
-	{
-		if (soundLoaded) jumpSound.play();
-		velocityY = -400.f;
-		grounded = false;
-	}
-	else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up) && grounded && gravityReversed)
-	{
-		if (soundLoaded) jumpSound.play();
-		velocityY = 400.f;
-		grounded = false;
-	}
-
-}
-
-void resetPlayer(sf::RectangleShape& player, bool& gravityReversed, float& velocityY, sf::View& camera, sf::Clock& clock)
-{
-	player.setPosition({ 25.f, 570.f });
-	gravityReversed = false;
-	velocityY = 0.f;
-	camera.setCenter(player.getPosition());
-	clock.restart();
-}
-
-bool detectPlatformCollision(sf::RectangleShape& player, sf::RectangleShape& platform)
-{
-	if (player.getGlobalBounds().findIntersection(platform.getGlobalBounds()))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool detectObjectCollision(sf::RectangleShape& player, sf::CircleShape triangle)
-{
-	if (player.getGlobalBounds().findIntersection(triangle.getGlobalBounds()))
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool detectPortalCollision(sf::RectangleShape& player, sf::Sprite& portal, bool& portalAnimationPlaying)
-{
-	if (player.getGlobalBounds().findIntersection(portal.getGlobalBounds()) && !portalAnimationPlaying)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-bool playerDeath(sf::RectangleShape& player, std::vector<sf::CircleShape>& triangleObstacles)
-{
-	static sf::SoundBuffer buffer;
-	static bool soundLoaded = buffer.loadFromFile("death.mp3");
-	static sf::Sound deathSound(buffer);
-
-	for (auto i : triangleObstacles)
-	{
-		if (detectObjectCollision(player, i))
-		{
-			if (soundLoaded) deathSound.play();
-			return true;
-		}
-	}
-
-	if (player.getPosition().y > 1000)
-	{
-		if (soundLoaded) deathSound.play();
-		return true;
-	}
-
-	return false;
-}
 
 sf::Text deathCounter(int deathCounter, sf::Font& font)
 {
@@ -218,57 +53,6 @@ sf::Text deathCounter(int deathCounter, sf::Font& font)
 	totalDeaths.setPosition(sf::Vector2(0.f, 400.f));
 
 	return totalDeaths;
-}
-
-void playerGravity(sf::RectangleShape& player, std::vector<sf::RectangleShape>& rectanglePlatforms, float deltaTime, float& velocityY, float gravity, bool& grounded, bool& gravityReversed)
-{	
-	grounded = false;
-
-	for (int i = 0; i < rectanglePlatforms.size(); i++)
-	{
-
-		if (player.getPosition().y + player.getSize().y - 5 > rectanglePlatforms[i].getPosition().y && player.getPosition().x < rectanglePlatforms[i].getPosition().x && detectPlatformCollision(player, rectanglePlatforms[i]))
-		{
-			player.setPosition({ rectanglePlatforms[i].getPosition().x - player.getSize().x, player.getPosition().y});
-		}
-		else if (!gravityReversed && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY >= 0)
-		{
-			player.setPosition({
-				player.getPosition().x,
-				rectanglePlatforms[i].getPosition().y - player.getSize().y
-				});
-
-
-			velocityY = 0.f;
-			grounded = true;
-			break;
-		}
-		else if (gravityReversed && detectPlatformCollision(player, rectanglePlatforms[i]) && velocityY <= 0 && gravityReversed)
-		{
-			player.setPosition({
-				player.getPosition().x,
-				rectanglePlatforms[i].getPosition().y + rectanglePlatforms[i].getSize().y
-				});
-
-			velocityY = 0.f;
-			grounded = true;
-			break;
-		}
-	}
-
-	if (!grounded)
-	{
-		if (gravityReversed)
-		{
-			velocityY -= gravity * deltaTime;
-		}
-		else
-		{
-			velocityY += gravity * deltaTime;
-		}
-
-		player.move({ 0.f, velocityY * deltaTime });
-	}
 }
 
 
@@ -326,7 +110,142 @@ bool buttonClick(Button& button, sf::RenderWindow& window, bool mouseClicked)
 	return false;
 }
 
-GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool& gravityReversed)
+void updateCamera(Player& player, sf::View& camera, sf::RenderWindow& window)
+{
+	camera.setCenter(player.getPosition());
+	window.setView(camera);
+}
+
+
+void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
+{
+	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
+	{
+		portalAnimationClock.restart();
+
+		portalFrame++;
+
+		if (portalFrame >= 8)
+		{
+			portalFrame = 0;
+		}
+
+		int column = portalFrame % 8;
+		int row = portalFrame / 8;
+
+		portal.setTextureRect(
+			sf::IntRect(
+				{ column * 64, row * 64 },
+				{ 64, 64 }
+			)
+		);
+	}
+}
+
+void portalCollisionAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal, bool& portalAnimationPlaying)
+{
+
+	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
+	{
+		portalAnimationClock.restart();
+
+		portalFrame++;
+
+		if (portalFrame >= 16)
+		{
+			portalFrame = 0;
+			portalAnimationPlaying = false;
+		}
+
+		int column = portalFrame % 8;
+		int row = portalFrame / 8;
+
+		portal.setTextureRect(
+			sf::IntRect(
+				{ column * 64, row * 64 },
+				{ 64, 64 }
+			)
+		);
+	}
+
+}
+
+struct PortalAnimation
+{
+	sf::Clock clock;
+	int frame = 0;
+	bool playing = false;
+};
+
+
+bool detectPortalCollision(
+	Player& player,
+	sf::Sprite& portal,
+	bool& portalAnimationPlaying)
+{
+	if (player.getBounds().findIntersection(portal.getGlobalBounds())
+		&& !portalAnimationPlaying)
+	{
+		return true;
+	}
+
+	return false;
+}
+
+void updatePortals(
+	Player& player,
+	std::vector<sf::Sprite>& portals,
+	std::vector<PortalAnimation>& portalAnimations,
+	sf::Sound& portalSound)
+{
+	for (std::size_t i = 0; i < portals.size(); i++)
+	{
+		auto& portal = portals[i];
+		auto& animation = portalAnimations[i];
+
+		if (detectPortalCollision(player, portal, animation.playing))
+		{
+			player.activateGravityPortal();
+
+			portalSound.play();
+
+			animation.playing = true;
+			animation.frame = 8;
+			animation.clock.restart();
+		}
+
+		if (animation.playing)
+		{
+			portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
+		}
+		else
+		{
+			portalIdleAnimation(animation.clock, animation.frame, portal);
+		}
+
+	}
+}
+
+void drawGame(sf::RenderWindow& window,
+	std::vector<sf::Sprite>& portals,
+	std::vector<sf::RectangleShape>& platforms,
+	std::vector<sf::CircleShape>& triangles,
+	sf::Text& deaths)
+{
+
+	for (auto& portal : portals)
+		window.draw(portal);
+
+	for (auto& platform : platforms)
+		window.draw(platform);
+
+	for (auto& triangle : triangles)
+		window.draw(triangle);
+
+	window.draw(deaths);
+}
+
+GameState mainMenu(sf::RenderWindow& window, sf::Font& font, Player& player, sf::View& camera, sf::Clock& clock, bool& mouseClicked)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -345,7 +264,9 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	if(buttonClick(playButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		resetPlayer(player, gravityReversed, velocityY, camera, clock);
+		player.reset();
+		camera.setCenter(player.getPosition());
+		clock.restart();
 		return GameState::LevelSelection;
 	}
 	else if (buttonClick(quitButton, window, mouseClicked))
@@ -364,7 +285,7 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape&
 	return GameState::MainMenu;
 }
 
-GameState pauseMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool& gravityReversed)
+GameState pauseMenu(sf::RenderWindow& window, sf::Font& font, Player& player, sf::View& camera, sf::Clock& clock, bool& mouseClicked)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -379,14 +300,17 @@ GameState pauseMenu(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape
 	if (buttonClick(mainMenuButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		resetPlayer(player, gravityReversed, velocityY, camera, clock);
+		player.reset();
+		camera.setCenter(player.getPosition());
+		clock.restart();
+
 		return GameState::MainMenu;
 	}
 
 	return GameState::PauseMenu;
 }
 
-GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velocityY, sf::Clock& clock, bool& mouseClicked, bool &gravityReversed)
+GameState levelSelection(sf::RenderWindow& window, sf::Font& font, Player& player, sf::View& camera, sf::Clock& clock, bool& mouseClicked)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -405,20 +329,24 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, sf::Rectangle
 	if (buttonClick(level1Button, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		resetPlayer(player, gravityReversed, velocityY, camera, clock);
+		player.reset();
+		camera.setCenter(player.getPosition());
+		clock.restart();
 		return GameState::Level1;
 	}
 	else if(buttonClick(level2Button, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		resetPlayer(player, gravityReversed, velocityY, camera, clock);
+		player.reset();
+		camera.setCenter(player.getPosition());
+		clock.restart();
 		return GameState::Level2;
 	}
 
 	return GameState::LevelSelection;
 }
 
-GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, sf::RectangleShape& player, sf::View& camera, float& velcoityY, sf::Clock& clock, bool& mouseClicked, GameState& currentLevel, bool& gravityReversed)
+GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font, Player& player, sf::View& camera, sf::Clock& clock, bool& mouseClicked, GameState& currentLevel)
 {
 	static sf::SoundBuffer buffer;
 	static bool soundLoaded = buffer.loadFromFile("click.mp3");
@@ -451,7 +379,9 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	if (buttonClick(replayButton, window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
-		resetPlayer(player, gravityReversed, velcoityY, camera, clock);
+		player.reset();
+		camera.setCenter(player.getPosition());
+		clock.restart();
 		return currentLevel;
 	}
 	else if (buttonClick(mainMenuButton, window, mouseClicked))
@@ -473,100 +403,6 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	}
 
 	return GameState::LevelComplete;
-}
-
-void playerState(bool& dead, sf::RectangleShape& player, std::vector<sf::RectangleShape>& platform,
-	float& deltaTime, float& velocityY, float& gravity, bool& grounded, std::vector<sf::CircleShape> obstacles,
-	int& totalDeath, sf::Text& deaths, sf::Clock& deathClock, float& speed, sf::View& camera, sf::RenderWindow& window,
-	bool& gravityReversed, sf::Clock& playerRunningAnimationClock, int& playerFrame, sf::Texture& playerRunTexture,
-	sf::Texture& playerRunUpsideDown, sf::Texture& playerJumpTexture, sf::Texture& playerJumpUpsideDownTexture)
-{
-	if (!dead)
-	{
-		playerGravity(player, platform, deltaTime, velocityY, gravity, grounded, gravityReversed);
-		playerRunningAnimation(playerRunningAnimationClock, playerFrame, player, playerRunTexture, playerRunUpsideDown, playerJumpTexture, playerJumpUpsideDownTexture, gravityReversed, grounded);
-
-		if (playerDeath(player, obstacles))
-		{
-			totalDeath++;
-			deaths.setString("Deaths: " + std::to_string(totalDeath));
-			dead = true;
-			deathClock.restart();
-		}
-		else
-		{
-			playerJump(velocityY, grounded, gravityReversed);
-			playerMovement(player, deltaTime, speed);
-		}
-	}
-	else
-	{
-		if (deathClock.getElapsedTime().asSeconds() >= 1.f)
-		{
-			gravityReversed = false;
-			player.setPosition({ 0.f, 520.f });
-			velocityY = 0.f;
-			dead = false;
-		}
-	}
-
-
-	camera.setCenter(player.getPosition());
-	window.setView(camera);
-
-}
-
-void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
-{
-		if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-		{
-			portalAnimationClock.restart();
-
-			portalFrame++;
-
-			if (portalFrame >= 8)
-			{
-				portalFrame = 0;
-			}
-
-			int column = portalFrame % 8;
-			int row = portalFrame / 8;
-
-			portal.setTextureRect(
-				sf::IntRect(
-					{ column * 64, row * 64 },
-					{ 64, 64 }
-				)
-			);
-		}
-}
-
-void portalCollisionAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal, bool& portalAnimationPlaying)
-{
-
-	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-	{
-		portalAnimationClock.restart();
-
-		portalFrame++;
-
-		if (portalFrame >= 16)
-		{
-			portalFrame = 0;
-			portalAnimationPlaying = false;
-		}
-
-		int column = portalFrame % 8;
-		int row = portalFrame / 8;
-
-		portal.setTextureRect(
-			sf::IntRect(
-				{ column * 64, row * 64 },
-				{ 64, 64 }
-			)
-		);
-	}
-
 }
 
 std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
@@ -701,76 +537,6 @@ std::vector<sf::Sprite> level2Portals(sf::Texture& portalTexture)
 	return portals;
 }
 
-struct PortalAnimation
-{
-	sf::Clock clock;
-	int frame = 0;
-	bool playing = false;
-};
-
-void updatePortals(
-	sf::RectangleShape& player,
-	std::vector<sf::Sprite>& portals,
-	std::vector<PortalAnimation>& portalAnimations,
-	bool& gravityReversed,
-	sf::Sound& portalSound)
-{
-	for (std::size_t i = 0; i < portals.size(); i++)
-	{
-		auto& portal = portals[i];
-		auto& animation = portalAnimations[i];
-
-		if (detectPortalCollision(player, portal, animation.playing))
-		{
-			if (!gravityReversed)
-			{
-				player.move({ 0.f, -2.f });
-			}
-			else if (gravityReversed)
-			{
-				player.move({ 0.f, 2.f });
-			}
-			gravityReversed = !gravityReversed;
-			portalSound.play();
-
-			animation.playing = true;
-			animation.frame = 8;
-			animation.clock.restart();
-		}
-
-		if (animation.playing)
-		{
-			portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
-		}
-		else
-		{
-			portalIdleAnimation(animation.clock, animation.frame, portal);
-		}
-
-	}
-}
-
-void drawGame(sf::RenderWindow& window,
-	sf::RectangleShape& player,
-	std::vector<sf::Sprite>& portals,
-	std::vector<sf::RectangleShape>& platforms,
-	std::vector<sf::CircleShape>& triangles,
-	sf::Text& deaths)
-{
-	window.draw(player);
-
-	for (auto& portal : portals)
-		window.draw(portal);
-
-	for (auto& platform : platforms)
-		window.draw(platform);
-
-	for (auto& triangle : triangles)
-		window.draw(triangle);
-
-	window.draw(deaths);
-}
-
 int main()
 {
 	GameState gameState = GameState::MainMenu;
@@ -785,23 +551,14 @@ int main()
 
 	sf::Texture portalTexture;
 	if (!portalTexture.loadFromFile("portal.png")) return 1;
+
 	sf::SoundBuffer buffer;
 	if(!buffer.loadFromFile("portalWoosh.mp3")) return 1;
 	sf::Sound portalSound(buffer);
 
-	sf::Texture playerRunTexture;
-	if (!playerRunTexture.loadFromFile("playerRun.png")) return 1;
-	sf::Texture playerRunUpsideDownTexture;
-	if (!playerRunUpsideDownTexture.loadFromFile("playerRunUpsideDown.png")) return 1;
-	sf::Clock playerRunningAnimationClock;
-	int playerFrame = 0;
-	sf::Texture playerJumpTexture;
-	if (!playerJumpTexture.loadFromFile("playerJump.png")) return 1;
-	sf::Texture playerJumpUpsideDownTexture;
-	if (!playerJumpUpsideDownTexture.loadFromFile("playerJumpUpsideDown.png")) return 1;
-	sf::RectangleShape player;
-	setupPlayer(player);
-	player.setTexture(&playerRunTexture);
+	Player player;
+	if (!player.loadTextures())
+		return 1;
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
@@ -820,17 +577,13 @@ int main()
 	if (!font.openFromFile("text.ttf")) { return 1; }
 
 	sf::Clock clock;
-	sf::Clock deathClock;
-	float speed = 400.f;
-	float velocityY = 0.f;
-	float gravity = 980.f;
-	bool grounded = false;
-	bool dead = false;
-	int totalDeath = 0;
-	sf::Text deaths = deathCounter(totalDeath, font);
+
+	sf::Text deaths = deathCounter(player.getTotalDeaths(), font);
+
 	sf::Text winText(font);
+
 	bool mouseClicked = false;
-	bool gravityReversed = false;
+
 
 	while (window.isOpen())
 	{
@@ -863,23 +616,24 @@ int main()
 		{
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
-			gameState = mainMenu(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
+			gameState = mainMenu(window, font, player, camera, clock, mouseClicked);
 		}
 		else if (gameState == GameState::PauseMenu)
 		{
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
-			gameState = pauseMenu(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
+			gameState = pauseMenu(window, font, player, camera, clock, mouseClicked);
 		}
 		else if (gameState == GameState::LevelSelection)
 		{
 			window.clear(sf::Color::Black);
 			window.setView(window.getDefaultView());
-			gameState = levelSelection(window, font, player, camera, velocityY, clock, mouseClicked, gravityReversed);
+			gameState = levelSelection(window, font, player, camera, clock, mouseClicked);
 		}
 		else if (gameState == GameState::Level1)
 		{
 			currentLevel = GameState::Level1;
+
 			float deltaTime = clock.restart().asSeconds();
 
 			if (player.getPosition().x >= 4000)
@@ -887,14 +641,21 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
-			playerState(dead, player, level1Platform, deltaTime, velocityY, gravity, grounded,
-				level1Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
-				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
+			player.update(deltaTime, level1Platform, level1Triangle);
 
-			updatePortals(player, level1Portal, portalAnimations, gravityReversed, portalSound);
+			updatePortals(player, level1Portal, portalAnimations, portalSound);
+
+			updateCamera(player, camera, window);
+
+			deaths.setString(
+				"Deaths: " + std::to_string(player.getTotalDeaths())
+			);
 
 			window.clear();
-			drawGame(window, player, level1Portal, level1Platform, level1Triangle, deaths);
+
+			drawGame(window, level1Portal, level1Platform, level1Triangle, deaths);
+
+			player.draw(window);
 
 		}
 		else if (gameState == GameState::Level2)
@@ -907,18 +668,25 @@ int main()
 				gameState = GameState::LevelComplete;
 			}
 
-			playerState(dead, player, level2Platform, deltaTime, velocityY, gravity, grounded,
-				level2Triangle, totalDeath, deaths, deathClock, speed, camera, window, gravityReversed,
-				playerRunningAnimationClock, playerFrame, playerRunTexture, playerRunUpsideDownTexture, playerJumpTexture, playerJumpUpsideDownTexture);
+			player.update(deltaTime, level2Platform, level2Triangle);
 
-			updatePortals(player, level2Portal, portalAnimations, gravityReversed, portalSound);
+			updatePortals(player, level2Portal, portalAnimations, portalSound);
+
+			updateCamera(player, camera, window);
+
+			deaths.setString(
+				"Deaths: " + std::to_string(player.getTotalDeaths())
+			);
 
 			window.clear();
-			drawGame(window, player, level2Portal, level2Platform, level2Triangle, deaths);
+
+			drawGame(window, level2Portal, level2Platform, level2Triangle, deaths);
+
+			player.draw(window);
 		}
 		else if (gameState == GameState::LevelComplete)
 		{
-			gameState = winScreen(window, winText, font, player, camera, velocityY, clock, mouseClicked, currentLevel, gravityReversed);
+			gameState = winScreen(window, winText, font, player, camera, clock, mouseClicked, currentLevel);
 		}
 		else if (gameState == GameState::Quit)
 		{
