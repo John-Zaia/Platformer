@@ -3,6 +3,7 @@
 #include <SFML/Audio.hpp>
 #include <string>
 #include "Player.h"
+#include "Portal.h"
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
 {
@@ -32,17 +33,6 @@ sf::CircleShape setupTriangle(float radius, int points, float xPosition, float y
 
 	return triangle;
 }
-
-sf::Sprite setupPortal(float xPosition, float yPosition, float xScale, float yScale, sf::Texture& portalTexture)
-{
-
-	sf::Sprite portal(portalTexture);
-	portal.setScale({ xScale, yScale });
-	portal.setPosition({ xPosition, yPosition });
-
-	return portal;
-}
-
 
 
 sf::Text deathCounter(int deathCounter, sf::Font& font)
@@ -116,131 +106,26 @@ void updateCamera(Player& player, sf::View& camera, sf::RenderWindow& window)
 	window.setView(camera);
 }
 
-
-void portalIdleAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal)
-{
-	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-	{
-		portalAnimationClock.restart();
-
-		portalFrame++;
-
-		if (portalFrame >= 8)
-		{
-			portalFrame = 0;
-		}
-
-		int column = portalFrame % 8;
-		int row = portalFrame / 8;
-
-		portal.setTextureRect(
-			sf::IntRect(
-				{ column * 64, row * 64 },
-				{ 64, 64 }
-			)
-		);
-	}
-}
-
-void portalCollisionAnimation(sf::Clock& portalAnimationClock, int& portalFrame, sf::Sprite& portal, bool& portalAnimationPlaying)
-{
-
-	if (portalAnimationClock.getElapsedTime().asSeconds() >= 0.1f)
-	{
-		portalAnimationClock.restart();
-
-		portalFrame++;
-
-		if (portalFrame >= 16)
-		{
-			portalFrame = 0;
-			portalAnimationPlaying = false;
-		}
-
-		int column = portalFrame % 8;
-		int row = portalFrame / 8;
-
-		portal.setTextureRect(
-			sf::IntRect(
-				{ column * 64, row * 64 },
-				{ 64, 64 }
-			)
-		);
-	}
-
-}
-
-struct PortalAnimation
-{
-	sf::Clock clock;
-	int frame = 0;
-	bool playing = false;
-};
-
-
-bool detectPortalCollision(
-	Player& player,
-	sf::Sprite& portal,
-	bool& portalAnimationPlaying)
-{
-	if (player.getBounds().findIntersection(portal.getGlobalBounds())
-		&& !portalAnimationPlaying)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void updatePortals(
-	Player& player,
-	std::vector<sf::Sprite>& portals,
-	std::vector<PortalAnimation>& portalAnimations,
-	sf::Sound& portalSound)
-{
-	for (std::size_t i = 0; i < portals.size(); i++)
-	{
-		auto& portal = portals[i];
-		auto& animation = portalAnimations[i];
-
-		if (detectPortalCollision(player, portal, animation.playing))
-		{
-			player.activateGravityPortal();
-
-			portalSound.play();
-
-			animation.playing = true;
-			animation.frame = 8;
-			animation.clock.restart();
-		}
-
-		if (animation.playing)
-		{
-			portalCollisionAnimation(animation.clock, animation.frame, portal, animation.playing);
-		}
-		else
-		{
-			portalIdleAnimation(animation.clock, animation.frame, portal);
-		}
-
-	}
-}
-
 void drawGame(sf::RenderWindow& window,
-	std::vector<sf::Sprite>& portals,
+	std::vector<Portal>& portals,
 	std::vector<sf::RectangleShape>& platforms,
 	std::vector<sf::CircleShape>& triangles,
 	sf::Text& deaths)
 {
-
 	for (auto& portal : portals)
-		window.draw(portal);
+	{
+		portal.draw(window);
+	}
 
 	for (auto& platform : platforms)
+	{
 		window.draw(platform);
+	}
 
 	for (auto& triangle : triangles)
+	{
 		window.draw(triangle);
+	}
 
 	window.draw(deaths);
 }
@@ -457,15 +342,15 @@ std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
 	return triangleObstacles;
 }
 
-std::vector<sf::Sprite> level1Portals(sf::Texture& portalTexture)
+std::vector<Portal> level1Portals(sf::Texture& portalTexture)
 {
-	std::vector<sf::Sprite> portals;
+	std::vector<Portal> portals;
 
 	// Reverse gravity
-	portals.push_back(setupPortal(1650.f, 175.f, 2.f, 2.f, portalTexture));
+	portals.emplace_back(1650.f, 175.f, 2.f, 2.f, portalTexture);
 
 	// Restore normal gravity
-	portals.push_back(setupPortal(2450.f, 30.f, 2.f, 2.f, portalTexture));
+	portals.emplace_back(2450.f, 30.f, 2.f, 2.f, portalTexture);
 
 	return portals;
 }
@@ -523,16 +408,15 @@ std::vector<sf::CircleShape> level2Triangles(sf::Texture& obstacleTexture)
 	return triangleObstacles;
 }
 
-std::vector<sf::Sprite> level2Portals(sf::Texture& portalTexture)
+std::vector<Portal> level2Portals(sf::Texture& portalTexture)
 {
-	std::vector<sf::Sprite> portals;
+	std::vector<Portal> portals;
 
 	// Reverse gravity
-	portals.push_back(setupPortal(2250.f, 442.f, 2.f, 2.f, portalTexture));
+	portals.emplace_back(2250.f, 442.f, 2.f, 2.f, portalTexture);
 
 	// Restore gravity
-	portals.push_back(setupPortal(3500.f, 330.f, 2.f, 2.f, portalTexture));
-
+	portals.emplace_back(3500.f, 330.f, 2.f, 2.f, portalTexture);
 
 	return portals;
 }
@@ -562,16 +446,13 @@ int main()
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
-	std::vector<PortalAnimation> portalAnimations;
 	std::vector<sf::RectangleShape> level1Platform = level1Platforms(groundTexture);
 	std::vector<sf::CircleShape> level1Triangle = level1Triangles(obstacleTexture);
-	std::vector<sf::Sprite> level1Portal = level1Portals(portalTexture);
-	portalAnimations.resize(level1Portal.size());
+	std::vector<Portal> level1Portal = level1Portals(portalTexture);
 
 	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
 	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
-	std::vector<sf::Sprite> level2Portal = level2Portals(portalTexture);
-	portalAnimations.resize(level2Portal.size());
+	std::vector<Portal> level2Portal = level2Portals(portalTexture);
 
 	sf::Font font;
 	if (!font.openFromFile("text.ttf")) { return 1; }
@@ -643,7 +524,10 @@ int main()
 
 			player.update(deltaTime, level1Platform, level1Triangle);
 
-			updatePortals(player, level1Portal, portalAnimations, portalSound);
+			for (auto& portal : level1Portal)
+			{
+				portal.update(player, portalSound);
+			}
 
 			updateCamera(player, camera, window);
 
@@ -670,7 +554,10 @@ int main()
 
 			player.update(deltaTime, level2Platform, level2Triangle);
 
-			updatePortals(player, level2Portal, portalAnimations, portalSound);
+			for (auto& portal : level2Portal)
+			{
+				portal.update(player, portalSound);
+			}
 
 			updateCamera(player, camera, window);
 
