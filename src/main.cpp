@@ -4,6 +4,7 @@
 #include <string>
 #include "Player.h"
 #include "Portal.h"
+#include "Button.h"
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
 {
@@ -57,49 +58,6 @@ enum class GameState
 	Quit
 };
 
-class Button
-{
-public:
-	sf::RectangleShape shape;
-	sf::Text text;
-	
-	Button(sf::Vector2f pos, sf::Vector2f sz, sf::Color col, const sf::Font& font, std::string textStr)
-		: text(font)
-	{
-		shape.setPosition(pos);
-		shape.setSize(sz);
-		shape.setFillColor(col);
-
-		text.setFont(font);
-		text.setString(textStr);
-		text.setCharacterSize(24);
-		text.setPosition({ pos.x + 10.f, pos.y + 10.f });
-	}
-};
-
-void buttonHoverHighlight(Button& button, sf::RenderWindow& window)
-{
-	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-	if ((mousePos.x >= button.shape.getPosition().x && mousePos.x <= button.shape.getPosition().x + button.shape.getSize().x)
-		&& (mousePos.y >= button.shape.getPosition().y && mousePos.y <= button.shape.getPosition().y + button.shape.getSize().y))
-	{
-		button.shape.setFillColor(sf::Color::Blue);
-	}
-}
-
-bool buttonClick(Button& button, sf::RenderWindow& window, bool mouseClicked)
-{
-	sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-	if (mouseClicked
-		&& (mousePos.x >= button.shape.getPosition().x && mousePos.x <= button.shape.getPosition().x + button.shape.getSize().x)
-		&& (mousePos.y >= button.shape.getPosition().y && mousePos.y <= button.shape.getPosition().y + button.shape.getSize().y))
-	{
-		return true;
-	}
-
-	return false;
-}
-
 void updateCamera(Player& player, sf::View& camera, sf::RenderWindow& window)
 {
 	camera.setCenter(player.getPosition());
@@ -137,16 +95,14 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, Player& player, sf:
 	static sf::Sound clickSound(buffer);
 
 	Button playButton({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Play");
-	buttonHoverHighlight(playButton, window);
-	window.draw(playButton.shape);
-	window.draw(playButton.text);
+	playButton.buttonHoverHighlight(window);
+	playButton.draw(window);
 
 	Button quitButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
-	buttonHoverHighlight(quitButton, window);
-	window.draw(quitButton.shape);
-	window.draw(quitButton.text);
+	quitButton.buttonHoverHighlight(window);
+	quitButton.draw(window);
 
-	if(buttonClick(playButton, window, mouseClicked))
+	if(playButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.reset();
@@ -154,7 +110,7 @@ GameState mainMenu(sf::RenderWindow& window, sf::Font& font, Player& player, sf:
 		clock.restart();
 		return GameState::LevelSelection;
 	}
-	else if (buttonClick(quitButton, window, mouseClicked))
+	else if (quitButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded)
 		{
@@ -178,11 +134,10 @@ GameState pauseMenu(sf::RenderWindow& window, sf::Font& font, Player& player, sf
 
 
 	Button mainMenuButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Main Menu");
-	buttonHoverHighlight(mainMenuButton, window);
-	window.draw(mainMenuButton.shape);
-	window.draw(mainMenuButton.text);
+	mainMenuButton.buttonHoverHighlight(window);
+	mainMenuButton.draw(window);
 
-	if (buttonClick(mainMenuButton, window, mouseClicked))
+	if (mainMenuButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.reset();
@@ -202,16 +157,14 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, Player& playe
 	static sf::Sound clickSound(buffer);
 
 	Button level1Button({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Level 1");
-	buttonHoverHighlight(level1Button, window);
-	window.draw(level1Button.shape);
-	window.draw(level1Button.text);
+	level1Button.buttonHoverHighlight(window);
+	level1Button.draw(window);
 
 	Button level2Button({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Level 2");
-	buttonHoverHighlight(level2Button, window);
-	window.draw(level2Button.shape);
-	window.draw(level2Button.text);
+	level2Button.buttonHoverHighlight(window);
+	level2Button.draw(window);
 
-	if (buttonClick(level1Button, window, mouseClicked))
+	if (level1Button.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.reset();
@@ -219,7 +172,7 @@ GameState levelSelection(sf::RenderWindow& window, sf::Font& font, Player& playe
 		clock.restart();
 		return GameState::Level1;
 	}
-	else if(buttonClick(level2Button, window, mouseClicked))
+	else if(level2Button.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.reset();
@@ -247,21 +200,18 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	winText.setPosition(sf::Vector2(350.f, 250.f));
 
 	Button replayButton({ 350.f, 200.f }, { 100.f, 50.f }, sf::Color::Red, font, "Replay");
-	buttonHoverHighlight(replayButton, window);
-	window.draw(replayButton.shape);
-	window.draw(replayButton.text);
+	replayButton.buttonHoverHighlight(window);
+	replayButton.draw(window);
 
 	Button mainMenuButton({ 350.f, 275.f }, { 100.f, 50.f }, sf::Color::Red, font, "Main Menu");
-	buttonHoverHighlight(mainMenuButton, window);
-	window.draw(mainMenuButton.shape);
-	window.draw(mainMenuButton.text);
+	mainMenuButton.buttonHoverHighlight(window);
+	mainMenuButton.draw(window);
 
 	Button quitButton({ 350.f, 350.f }, { 100.f, 50.f }, sf::Color::Red, font, "Quit");
-	buttonHoverHighlight(quitButton, window);
-	window.draw(quitButton.shape);
-	window.draw(quitButton.text);
+	quitButton.buttonHoverHighlight(window);
+	quitButton.draw(window);
 
-	if (buttonClick(replayButton, window, mouseClicked))
+	if (replayButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		player.reset();
@@ -269,12 +219,12 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 		clock.restart();
 		return currentLevel;
 	}
-	else if (buttonClick(mainMenuButton, window, mouseClicked))
+	else if (mainMenuButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded) clickSound.play();
 		return GameState::MainMenu;
 	}
-	else if (buttonClick(quitButton, window, mouseClicked))
+	else if (quitButton.buttonClick(window, mouseClicked))
 	{
 		if (soundLoaded)
 		{
