@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "Portal.h"
 #include "Button.h"
+#include "Level.h"
 
 sf::RectangleShape setupPlatform( float xSize, float ySize, float xPosition, float yPosition, sf::Texture& groundTexture)
 {
@@ -240,69 +241,51 @@ GameState winScreen(sf::RenderWindow& window, sf::Text& winText, sf::Font& font,
 	return GameState::LevelComplete;
 }
 
-std::vector<sf::RectangleShape> level1Platforms(sf::Texture& groundTexture)
+Level createLevel1(sf::Texture& groundTexture, sf::Texture& obstacleTexture, sf::Texture& portalTexture)
 {
-	std::vector<sf::RectangleShape> platforms;
+	Level level(4000.f);
 
 	// Starting platform
-	platforms.push_back(setupPlatform(800.f, 30.f, 0.f, 570.f, groundTexture));
+	level.addPlatform(800.f, 30.f, 0.f, 570.f, groundTexture);
 
-	// Staircase 
-	platforms.push_back(setupPlatform(50.f, 30.f, 950.f, 500.f, groundTexture));
-	platforms.push_back(setupPlatform(50.f, 30.f, 1150.f, 430.f, groundTexture));
-	platforms.push_back(setupPlatform(50.f, 30.f, 1350.f, 360.f, groundTexture));
-
-	// Landing platform before the first portal
-	platforms.push_back(setupPlatform(200.f, 30.f, 1550.f, 290.f, groundTexture));
+	// Staircase
+	level.addPlatform(50.f, 30.f, 950.f, 500.f, groundTexture);
+	level.addPlatform(50.f, 30.f, 1150.f, 430.f, groundTexture);
+	level.addPlatform(50.f, 30.f, 1350.f, 360.f, groundTexture);
 
 	// Ceiling for the gravity-reversed section
-	platforms.push_back(setupPlatform(1050.f, 30.f, 1550.f, 0.f, groundTexture));
+	level.addPlatform(1050.f, 30.f, 1550.f, 0.f, groundTexture);
 
 	// Floor beneath the gravity-reversed section
-	platforms.push_back(setupPlatform(800.f, 30.f, 1800.f, 570.f, groundTexture));
+	level.addPlatform(800.f, 30.f, 1800.f, 570.f, groundTexture);
 
 	// Final stretch
-	platforms.push_back(setupPlatform(1400.f, 30.f, 2600.f, 570.f, groundTexture));
-
-	return platforms;
-}
-
-std::vector<sf::CircleShape> level1Triangles(sf::Texture& obstacleTexture)
-{
-	std::vector<sf::CircleShape> triangleObstacles;
+	level.addPlatform(1400.f, 30.f, 2600.f, 570.f, groundTexture);
 
 	// Introductory obstacles
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 430.f, 540.f, 0.f, obstacleTexture));
+	level.addTriangle(20.f, 3, 400.f, 540.f, 0.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 430.f, 540.f, 0.f, obstacleTexture);
 
 	// Ceiling obstacles
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 2100.f, 60.f, 180.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 2150.f, 60.f, 180.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 2200.f, 60.f, 180.f, obstacleTexture));
+	level.addTriangle(20.f, 3, 2100.f, 60.f, 180.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 2150.f, 60.f, 180.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 2200.f, 60.f, 180.f, obstacleTexture);
 
 	// Final obstacles
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3100.f, 540.f, 0.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3130.f, 540.f, 0.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3160.f, 540.f, 0.f, obstacleTexture));
+	level.addTriangle(20.f, 3, 3100.f, 540.f, 0.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 3130.f, 540.f, 0.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 3160.f, 540.f, 0.f, obstacleTexture);
 
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3550.f, 540.f, 0.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3580.f, 540.f, 0.f, obstacleTexture));
-	triangleObstacles.push_back(setupTriangle(20.f, 3, 3610.f, 540.f, 0.f, obstacleTexture));
+	level.addTriangle(20.f, 3, 3550.f, 540.f, 0.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 3580.f, 540.f, 0.f, obstacleTexture);
+	level.addTriangle(20.f, 3, 3610.f, 540.f, 0.f, obstacleTexture);
 
-	return triangleObstacles;
-}
+	// Portals
+	level.addPortal(1650.f, 175.f, 2.f, 2.f, portalTexture);
+	level.addPortal(2450.f, 30.f, 2.f, 2.f, portalTexture);
 
-std::vector<Portal> level1Portals(sf::Texture& portalTexture)
-{
-	std::vector<Portal> portals;
 
-	// Reverse gravity
-	portals.emplace_back(1650.f, 175.f, 2.f, 2.f, portalTexture);
-
-	// Restore normal gravity
-	portals.emplace_back(2450.f, 30.f, 2.f, 2.f, portalTexture);
-
-	return portals;
+	return level;
 }
 
 std::vector<sf::RectangleShape> level2Platforms(sf::Texture& groundTexture)
@@ -396,9 +379,7 @@ int main()
 
 	sf::View camera(sf::Vector2f(0.f, 0.f), sf::Vector2f(800.f, 600.f));
 
-	std::vector<sf::RectangleShape> level1Platform = level1Platforms(groundTexture);
-	std::vector<sf::CircleShape> level1Triangle = level1Triangles(obstacleTexture);
-	std::vector<Portal> level1Portal = level1Portals(portalTexture);
+	Level level1 = createLevel1(groundTexture, obstacleTexture, portalTexture);
 
 	std::vector<sf::RectangleShape> level2Platform = level2Platforms(groundTexture);
 	std::vector<sf::CircleShape> level2Triangle = level2Triangles(obstacleTexture);
@@ -467,17 +448,12 @@ int main()
 
 			float deltaTime = clock.restart().asSeconds();
 
-			if (player.getPosition().x >= 4000)
+			if (level1.isComplete(player))
 			{
 				gameState = GameState::LevelComplete;
 			}
 
-			player.update(deltaTime, level1Platform, level1Triangle);
-
-			for (auto& portal : level1Portal)
-			{
-				portal.update(player, portalSound);
-			}
+			level1.update(player, deltaTime, portalSound);
 
 			updateCamera(player, camera, window);
 
@@ -487,8 +463,8 @@ int main()
 
 			window.clear();
 
-			drawGame(window, level1Portal, level1Platform, level1Triangle, deaths);
-
+			level1.draw(window);
+			window.draw(deaths);
 			player.draw(window);
 
 		}
